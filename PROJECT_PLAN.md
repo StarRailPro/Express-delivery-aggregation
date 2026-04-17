@@ -972,7 +972,7 @@ Express-delivery-aggregation/
 | T1  | 初始化项目骨架（前后端）                 | ✅ 已完成 |
 | T2  | 后端：用户注册/登录 + JWT 认证          | ✅ 已完成 |
 | T3  | 后端：快递数据模型 + CRUD 接口          | ✅ 已完成 |
-| T4  | 后端：接入快递鸟/快递100 API           | 🔲 未开始 |
+| T4  | 后端：接入快递鸟/快递100 API           | ✅ 已完成 |
 | T5  | 后端：地址解析服务（正则 + 高德 Geocoding） | 🔲 未开始 |
 | T6  | 后端：定时刷新模块                    | 🔲 未开始 |
 | T7  | 前端：项目初始化 + 路由 + 布局           | 🔲 未开始 |
@@ -991,6 +991,10 @@ Express-delivery-aggregation/
 **T3 完成记录**：
 - **完成时间**：2026-04-15 21:30
 - **实现说明**：后端快递数据模型 + CRUD 接口完整实现。包含：Package Mongoose Model（userId索引+联合索引、trackingNo、carrier/carrierCode、alias、status枚举、fromCity/toCity、lastSyncAt、isArchived、trackingRecords引用数组、toJSON去除__v）；TrackingRecord Mongoose Model（packageId索引、timestamp、description、city、location嵌套文档{lng,lat}、syncedAt）；packageController（create自动识别快递公司+关联User.packages、list按状态分组返回+排除已归档、getById含物流轨迹数组、update支持别名/状态更新、delete级联删除TrackingRecord+从User.packages移除、archive归档操作）；carrierService Mock服务（根据单号前缀识别10家快递公司+纯数字单号规则匹配）；所有快递路由挂载authMiddleware确保数据隔离（所有查询/操作均带userId条件）；参数校验（trackingNo必填1-50字符、alias可选最长50字符、status可选）。
+
+**T4 完成记录**：
+- **完成时间**：2026-04-17
+- **实现说明**：后端接入快递鸟/快递100 API 完整实现，含 Mock 降级机制。包含：ExpressApiService 类（封装快递鸟+快递100双供应商API调用，detectCarrier自动识别快递公司、getTrackingInfo查询物流轨迹）；Mock 降级机制（当 EXPRESS_API_KEY 为空或为 mock 时不发真实网络请求，直接返回逼真模拟数据，包含10家快递公司的完整物流时间线，覆盖从发货到签收的全流程）；重试机制 retryWithBackoff（最多3次重试，指数退避1s/2s/4s，可配置 shouldRetry 策略）；API 调用计数器 apiCounterService（记录每次API调用的名称/时间/成功与否/耗时/错误信息，支持按日统计和按API分类统计）；缓存服务 cacheService（内存缓存+TTL自动过期，快递公司识别结果按单号前缀缓存24h，物流轨迹按单号缓存30min，自动清理过期条目）；packageController 重构（create创建时自动调用ExpressApiService获取物流信息并写入TrackingRecord，新增refresh接口支持手动刷新物流信息，已签收快递跳过刷新）；路由新增 POST /api/packages/:id/refresh；.env 配置项 EXPRESS_API_PROVIDER/EXPRESS_API_KEY/EXPRESS_API_SECRET。
 
 ### Phase 2 - 地图可视化
 

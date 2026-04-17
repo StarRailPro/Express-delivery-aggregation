@@ -20,7 +20,7 @@ Content-Type: application/json
 ### 3. 测试获取当前用户信息 (Get Me)
 # 把下面的 eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWUxZDUwYThkM2ZmNGUzYTM0MmMzYWIiLCJ1c2VybmFtZSI6InRlc3R1c2VyIiwiaWF0IjoxNzc2NDA3ODQyLCJleHAiOjE3NzcwMTI2NDJ9.YqM_UrmSAInFliwIzMy3IaovfjS6AnLGXu3p2aCBk3g 替换成你刚才复制的 token
 GET http://localhost:3000/api/auth/me
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWUxZDUwYThkM2ZmNGUzYTM0MmMzYWIiLCJ1c2VybmFtZSI6InRlc3R1c2VyIiwiaWF0IjoxNzc2NDA4MDgxLCJleHAiOjE3NzcwMTI4ODF9.khMrVxc_Sp9icSZi9DSTd-0vt-S4WL8nOmt3U50iWlo
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWUxZDUwYThkM2ZmNGUzYTM0MmMzYWIiLCJ1c2VybmFtZSI6InRlc3R1c2VyIiwiaWF0IjoxNzc2NDE3MDY5LCJleHAiOjE3NzcwMjE4Njl9.TiyhWRm0W0gI2qUDV_mngPEjDFrYnCLEMBNKdo7uYUg
 
 ### ============================================================
 ### T3 快递接口测试
@@ -39,10 +39,10 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWUxZ
 ### 5. 添加快递 - 中通单号 (Create Package - ZTO)
 POST http://localhost:3000/api/packages
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWUxZDUwYThkM2ZmNGUzYTM0MmMzYWIiLCJ1c2VybmFtZSI6InRlc3R1c2VyIiwiaWF0IjoxNzc2NDA3ODQyLCJleHAiOjE3NzcwMTI2NDJ9.YqM_UrmSAInFliwIzMy3IaovfjS6AnLGXu3p2aCBk3g
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWUxZDUwYThkM2ZmNGUzYTM0MmMzYWIiLCJ1c2VybmFtZSI6InRlc3R1c2VyIiwiaWF0IjoxNzc2NDE3MDY5LCJleHAiOjE3NzcwMjE4Njl9.TiyhWRm0W0gI2qUDV_mngPEjDFrYnCLEMBNKdo7uYUg
 
 {
-  "trackingNo": "ZTO9876543210"
+  "trackingNo": "78595981477166"
 }
 
 ### 6. 添加快递 - 带别名 (Create Package with Alias)

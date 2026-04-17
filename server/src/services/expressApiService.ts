@@ -98,7 +98,7 @@ class ExpressApiService {
     const requestData = JSON.stringify({ LogisticCode: trackingNo });
     const dataSign = this.kdniaoSign(requestData, API_SECRET);
 
-    const url = 'https://api.kdniao.com/Ebusiness/EbusinessOrderHandler.aspx';
+    const url = 'https://api.kdniao.com/Ebusiness/EbusinessOrderHandle.aspx';
     const body = new URLSearchParams({
       RequestData: requestData,
       EBusinessID: API_KEY,
@@ -145,11 +145,11 @@ class ExpressApiService {
     });
     const dataSign = this.kdniaoSign(requestData, API_SECRET);
 
-    const url = 'https://api.kdniao.com/Ebusiness/EbusinessOrderHandler.aspx';
+    const url = 'https://api.kdniao.com/Ebusiness/EbusinessOrderHandle.aspx';
     const body = new URLSearchParams({
       RequestData: requestData,
       EBusinessID: API_KEY,
-      RequestType: '1002',
+      RequestType: '8002',
       DataSign: dataSign,
       DataType: '2',
     });
@@ -306,16 +306,8 @@ class ExpressApiService {
   }
 
   private kdniaoSign(data: string, secret: string): string {
-    return Buffer.from(
-      crypto
-        .createHash('md5')
-        .update(data + secret)
-        .digest('hex') + secret,
-    )
-      .toString('base64')
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/, '');
+    const md5 = crypto.createHash('md5').update(data + secret).digest('hex');
+    return Buffer.from(md5).toString('base64');
   }
 
   private extractCityFromDesc(desc: string, location?: string): string {
