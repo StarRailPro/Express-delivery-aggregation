@@ -1,4 +1,4 @@
-import { model, Schema, Document, Types } from 'mongoose';
+import { model, Schema, Document } from 'mongoose';
 import { IPackage, PackageStatus } from '../types';
 
 export type PackageDocument = IPackage & Document;

@@ -192,3 +192,74 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWUxZ
 # 使用第二个用户的 Token + 第一个用户的 Package ID
 GET http://localhost:3000/api/packages/69e1d65b8d3ff4e3a342c3c0
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWUxZDdjYzhkM2ZmNGUzYTM0MmMzZGQiLCJ1c2VybmFtZSI6InRlc3R1c2VyMiIsImlhdCI6MTc3NjQwODUzMywiZXhwIjoxNzc3MDEzMzMzfQ.jlfDLhTMX_25c-WY2798MFrR8jMpEUzEGqr_Y2BpTco
+
+### ============================================================
+### T4 快递API接入测试（Mock模式）
+### 注意：请先执行登录接口，获取 Token 后替换下面的 Token
+### 当前 .env 中 EXPRESS_API_KEY=mock，所有快递查询将返回模拟数据
+### ============================================================
+
+### 27. 添加快递 - 顺丰单号（Mock模式会自动识别+生成物流轨迹）
+POST http://localhost:3000/api/packages
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWUxZDUwYThkM2ZmNGUzYTM0MmMzYWIiLCJ1c2VybmFtZSI6InRlc3R1c2VyIiwiaWF0IjoxNzc2NDA4MDgxLCJleHAiOjE3NzcwMTI4ODF9.khMrVxc_Sp9icSZi9DSTd-0vt-S4WL8nOmt3U50iWlo
+
+{
+  "trackingNo": "SF1390248582",
+  "alias": "顺丰测试包裹"
+}
+
+### 28. 添加快递 - 京东物流单号（Mock模式）
+POST http://localhost:3000/api/packages
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWUxZDUwYThkM2ZmNGUzYTM0MmMzYWIiLCJ1c2VybmFtZSI6InRlc3R1c2VyIiwiaWF0IjoxNzc2NDA4MDgxLCJleHAiOjE3NzcwMTI4ODF9.khMrVxc_Sp9icSZi9DSTd-0vt-S4WL8nOmt3U50iWlo
+
+{
+  "trackingNo": "JD0034567890",
+  "alias": "京东测试包裹"
+}
+
+### 29. 添加快递 - 极兔速递单号（Mock模式）
+POST http://localhost:3000/api/packages
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWUxZDUwYThkM2ZmNGUzYTM0MmMzYWIiLCJ1c2VybmFtZSI6InRlc3R1c2VyIiwiaWF0IjoxNzc2NDA4MDgxLCJleHAiOjE3NzcwMTI4ODF9.khMrVxc_Sp9icSZi9DSTd-0vt-S4WL8nOmt3U50iWlo
+
+{
+  "trackingNo": "JT0098765432"
+}
+
+### 30. 添加快递 - 圆通纯数字单号（75开头，Mock模式）
+POST http://localhost:3000/api/packages
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWUxZDUwYThkM2ZmNGUzYTM0MmMzYWIiLCJ1c2VybmFtZSI6InRlc3R1c2VyIiwiaWF0IjoxNzc2NDA4MDgxLCJleHAiOjE3NzcwMTI4ODF9.khMrVxc_Sp9icSZi9DSTd-0vt-S4WL8nOmt3U50iWlo
+
+{
+  "trackingNo": "751234567890"
+}
+
+### 31. 查看快递列表 - 应包含物流轨迹数据
+GET http://localhost:3000/api/packages
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWUxZDUwYThkM2ZmNGUzYTM0MmMzYWIiLCJ1c2VybmFtZSI6InRlc3R1c2VyIiwiaWF0IjoxNzc2NDA4MDgxLCJleHAiOjE3NzcwMTI4ODF9.khMrVxc_Sp9icSZi9DSTd-0vt-S4WL8nOmt3U50iWlo
+
+### 32. 获取快递详情 - 含完整物流时间线
+# 把 PACKAGE_ID_HERE 替换为上面创建快递后返回的 id
+GET http://localhost:3000/api/packages/69e1f542249960745204566f
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWUxZDUwYThkM2ZmNGUzYTM0MmMzYWIiLCJ1c2VybmFtZSI6InRlc3R1c2VyIiwiaWF0IjoxNzc2NDA4MDgxLCJleHAiOjE3NzcwMTI4ODF9.khMrVxc_Sp9icSZi9DSTd-0vt-S4WL8nOmt3U50iWlo
+
+### 33. 手动刷新物流信息（核心T4接口）
+# 把 PACKAGE_ID_HERE 替换为上面创建快递后返回的 id
+# 返回更新后的快递信息 + 最新的物流轨迹
+POST http://localhost:3000/api/packages/69e1f542249960745204566f/refresh
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWUxZDUwYThkM2ZmNGUzYTM0MmMzYWIiLCJ1c2VybmFtZSI6InRlc3R1c2VyIiwiaWF0IjoxNzc2NDA4MDgxLCJleHAiOjE3NzcwMTI4ODF9.khMrVxc_Sp9icSZi9DSTd-0vt-S4WL8nOmt3U50iWlo
+
+### 34. 刷新已签收快递 - 应返回"无需刷新"提示
+# 先通过 PUT /:id 将状态改为 delivered，再调用 refresh
+POST http://localhost:3000/api/packages/69e1f542249960745204566f/refresh
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWUxZDUwYThkM2ZmNGUzYTM0MmMzYWIiLCJ1c2VybmFtZSI6InRlc3R1c2VyIiwiaWF0IjoxNzc2NDA4MDgxLCJleHAiOjE3NzcwMTI4ODF9.khMrVxc_Sp9icSZi9DSTd-0vt-S4WL8nOmt3U50iWlo
+
+### 35. 刷新不存在的快递 - 应返回404
+POST http://localhost:3000/api/packages/000000000000000000000000/refresh
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWUxZDUwYThkM2ZmNGUzYTM0MmMzYWIiLCJ1c2VybmFtZSI6InRlc3R1c2VyIiwiaWF0IjoxNzc2NDA4MDgxLCJleHAiOjE3NzcwMTI4ODF9.khMrVxc_Sp9icSZi9DSTd-0vt-S4WL8nOmt3U50iWlo
+
+### 36. 无Token刷新快递 - 应返回401
+POST http://localhost:3000/api/packages/PACKAGE_ID_HERE/refresh

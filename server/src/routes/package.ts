@@ -6,6 +6,7 @@ import {
   update,
   deletePackage,
   archive,
+  refresh,
 } from '../controllers/packageController';
 import { authMiddleware } from '../middleware/auth';
 import { validateBody } from '../middleware/validator';
@@ -25,6 +26,8 @@ router.post(
 router.get('/', list);
 
 router.get('/:id', getById);
+
+router.post('/:id/refresh', refresh);
 
 router.put(
   '/:id',

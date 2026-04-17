@@ -5,7 +5,7 @@ import User from '../models/User';
 import { successResponse } from '../utils/responseHandler';
 import { AppError } from '../middleware/errorHandler';
 import { AuthenticatedRequest } from '../middleware/auth';
-import { detectCarrier } from '../services/carrierService';
+import expressApiService from '../services/expressApiService';
 import { Types } from 'mongoose';
 
 export async function create(
@@ -30,7 +30,17 @@ export async function create(
       return;
     }
 
-    const carrierInfo = detectCarrier(trimmedNo);
+    const carrierInfo = await expressApiService.detectCarrier(trimmedNo);
+
+    let trackingResult = null;
+    try {
+      trackingResult = await expressApiService.getTrackingInfo(trimmedNo, carrierInfo.carrierCode);
+    } catch (err) {
+      console.warn(
+        `[Package] 创建快递时获取物流信息失败，将稍后同步: ${trimmedNo}`,
+        err instanceof Error ? err.message : String(err),
+      );
+    }
 
     const pkg = await Package.create({
       userId: new Types.ObjectId(userId),
@@ -38,10 +48,12 @@ export async function create(
       carrier: carrierInfo.carrier,
       carrierCode: carrierInfo.carrierCode,
       alias: alias || '',
-      status: 'in_transit',
-      fromCity: '',
-      toCity: '',
-      lastSyncAt: null,
+      status: trackingResult
+        ? (trackingResult.status as 'in_transit' | 'delivered' | 'exception')
+        : 'in_transit',
+      fromCity: trackingResult?.fromCity || '',
+      toCity: trackingResult?.toCity || '',
+      lastSyncAt: trackingResult ? new Date() : null,
       isArchived: false,
       trackingRecords: [],
     });
@@ -50,20 +62,41 @@ export async function create(
       $push: { packages: pkg._id },
     });
 
+    if (trackingResult && trackingResult.traces.length > 0) {
+      const recordIds: Types.ObjectId[] = [];
+      for (const trace of trackingResult.traces) {
+        const record = await TrackingRecord.create({
+          packageId: pkg._id,
+          timestamp: new Date(trace.timestamp),
+          description: trace.description,
+          city: trace.city,
+          location: null,
+          syncedAt: new Date(),
+        });
+        recordIds.push(record._id as Types.ObjectId);
+      }
+      await Package.findByIdAndUpdate(pkg._id, {
+        $push: { trackingRecords: { $each: recordIds } },
+      });
+    }
+
+    const updatedPkg = await Package.findById(pkg._id);
+
     successResponse(
       res,
       {
-        id: pkg._id,
-        trackingNo: pkg.trackingNo,
-        carrier: pkg.carrier,
-        carrierCode: pkg.carrierCode,
-        alias: pkg.alias,
-        status: pkg.status,
-        fromCity: pkg.fromCity,
-        toCity: pkg.toCity,
-        isArchived: pkg.isArchived,
-        createdAt: pkg.createdAt,
-        updatedAt: pkg.updatedAt,
+        id: updatedPkg!._id,
+        trackingNo: updatedPkg!.trackingNo,
+        carrier: updatedPkg!.carrier,
+        carrierCode: updatedPkg!.carrierCode,
+        alias: updatedPkg!.alias,
+        status: updatedPkg!.status,
+        fromCity: updatedPkg!.fromCity,
+        toCity: updatedPkg!.toCity,
+        lastSyncAt: updatedPkg!.lastSyncAt,
+        isArchived: updatedPkg!.isArchived,
+        createdAt: updatedPkg!.createdAt,
+        updatedAt: updatedPkg!.updatedAt,
       },
       '快递添加成功',
       201,
@@ -266,5 +299,99 @@ export async function archive(
     });
   } catch (error) {
     next(error);
+  }
+}
+
+export async function refresh(
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const userId = req.user?.userId;
+    const { id } = req.params;
+
+    const pkg = await Package.findOne({ _id: id, userId });
+    if (!pkg) {
+      next(new AppError('快递记录不存在或无权访问', 404));
+      return;
+    }
+
+    if (pkg.status === 'delivered') {
+      successResponse(res, {
+        id: pkg._id,
+        trackingNo: pkg.trackingNo,
+        status: pkg.status,
+        lastSyncAt: pkg.lastSyncAt,
+        message: '快递已签收，无需刷新',
+      });
+      return;
+    }
+
+    const trackingResult = await expressApiService.getTrackingInfo(pkg.trackingNo, pkg.carrierCode);
+
+    await TrackingRecord.deleteMany({ packageId: pkg._id });
+
+    const recordIds: Types.ObjectId[] = [];
+    for (const trace of trackingResult.traces) {
+      const record = await TrackingRecord.create({
+        packageId: pkg._id,
+        timestamp: new Date(trace.timestamp),
+        description: trace.description,
+        city: trace.city,
+        location: null,
+        syncedAt: new Date(),
+      });
+      recordIds.push(record._id as Types.ObjectId);
+    }
+
+    const updateData: Record<string, unknown> = {
+      lastSyncAt: new Date(),
+      trackingRecords: recordIds,
+    };
+
+    if (trackingResult.status === 'delivered' || trackingResult.status === 'exception') {
+      updateData.status = trackingResult.status;
+    }
+    if (trackingResult.fromCity) {
+      updateData.fromCity = trackingResult.fromCity;
+    }
+    if (trackingResult.toCity) {
+      updateData.toCity = trackingResult.toCity;
+    }
+
+    const updatedPkg = await Package.findOneAndUpdate({ _id: id, userId }, updateData, {
+      new: true,
+    }).populate('trackingRecords');
+
+    const trackingRecords = await TrackingRecord.find({ packageId: id }).sort({ timestamp: -1 });
+
+    successResponse(
+      res,
+      {
+        package: {
+          id: updatedPkg!._id,
+          trackingNo: updatedPkg!.trackingNo,
+          carrier: updatedPkg!.carrier,
+          carrierCode: updatedPkg!.carrierCode,
+          alias: updatedPkg!.alias,
+          status: updatedPkg!.status,
+          fromCity: updatedPkg!.fromCity,
+          toCity: updatedPkg!.toCity,
+          lastSyncAt: updatedPkg!.lastSyncAt,
+          isArchived: updatedPkg!.isArchived,
+          createdAt: updatedPkg!.createdAt,
+          updatedAt: updatedPkg!.updatedAt,
+        },
+        trackingRecords,
+      },
+      '物流信息刷新成功',
+    );
+  } catch (error) {
+    if (error instanceof Error) {
+      next(new AppError(`物流信息刷新失败: ${error.message}`, 502));
+    } else {
+      next(error);
+    }
   }
 }
