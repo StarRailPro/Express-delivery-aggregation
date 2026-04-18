@@ -975,7 +975,7 @@ Express-delivery-aggregation/
 | T4  | 后端：接入快递鸟/快递100 API           | ✅ 已完成 |
 | T5  | 后端：地址解析服务（正则 + 高德 Geocoding） | ✅ 已完成 |
 | T6  | 后端：定时刷新模块                    | ✅ 已完成 |
-| T7  | 前端：项目初始化 + 路由 + 布局           | 🔲 未开始 |
+| T7  | 前端：项目初始化 + 路由 + 布局           | ✅ 已完成 |
 | T8  | 前端：登录/注册页面                   | 🔲 未开始 |
 | T9  | 前端：快递列表 + 物流详情页面             | 🔲 未开始 |
 | T10 | 前端：添加快递弹窗                    | 🔲 未开始 |
@@ -1003,6 +1003,10 @@ Express-delivery-aggregation/
 **T6 完成记录**：
 - **完成时间**：2026-04-18
 - **实现说明**：后端定时刷新模块完整实现，包含 D3 定时刷新、D4 签收降频、D5 手动刷新（已有）、并发控制。包含：utils/concurrency.ts（通用并发控制工具 runWithConcurrency，基于批次+Promise.all 实现，每批最多同时执行 N 个任务，批次间可配置延迟，每个任务独立 try/catch 互不影响）；services/scheduler.ts（核心调度器：node-cron 配置每2小时执行一次 `0 */2 * * *`，查询所有 status=in_transit 或 status=exception 且未归档的快递，排除已签收(delivered)的快递，通过并发控制每次最多5个API请求，刷新逻辑复用 trackingSyncService 同步物流轨迹+城市坐标，自动更新快递状态（签收/异常），isRunning 防重入机制防止任务重叠执行，刷新日志记录每次执行的时间/处理数量/成功/失败/跳过数，日志上限100条自动淘汰旧记录，支持环境变量 SCHEDULER_CRON_EXPRESSION 自定义 cron 表达式，cron.validate() 校验表达式合法性，提供 startScheduler/stopScheduler/getRefreshLogs/executeScheduledRefresh 导出接口）；app.ts 更新（MongoDB 连接成功后自动启动调度器 startScheduler()）；.env.example 更新（新增 SCHEDULER_CRON_EXPRESSION 配置项及注释说明）。
+
+**T7 完成记录**：
+- **完成时间**：2026-04-18
+- **实现说明**：前端项目初始化 + 路由 + 布局完整实现。包含：components/AuthGuard.tsx（路由守卫组件，检查 localStorage 中的 token，未登录时 Navigate replace 到 /login，已登录渲染 Outlet，不会导致死循环因为 AuthGuard 仅包裹受保护路由）；pages/Login.tsx（登录占位页面，居中卡片布局，含跳转注册链接）；pages/Register.tsx（注册占位页面，居中卡片布局，含跳转登录链接）；pages/Dashboard.tsx（Dashboard 布局，使用 Ant Design Layout 组件，Header 含应用标题+退出登录按钮，Content 区域 flex 布局左侧30%快递列表+右侧70%物流详情，退出登录清除 token 并 Navigate replace 到 /login）；App.tsx 重构（BrowserRouter + Routes 配置，/ 默认重定向到 /dashboard，/login 和 /register 为公开路由，/dashboard 被 AuthGuard 包裹为受保护路由）；api/request.ts 优化（401 响应拦截器增加认证端点判断，/auth/login 和 /auth/register 的 401 不触发 token 清除和页面跳转，仅显示后端返回的错误消息，避免登录失败时误显示"登录已过期"）。
 
 ### Phase 2 - 地图可视化
 

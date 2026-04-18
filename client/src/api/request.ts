@@ -30,9 +30,16 @@ request.interceptors.response.use(
     if (error.response) {
       const { status, data } = error.response;
       if (status === 401) {
-        localStorage.removeItem('token');
-        window.location.href = '/login';
-        message.error('登录已过期，请重新登录');
+        const isAuthEndpoint =
+          error.config?.url?.includes('/auth/login') ||
+          error.config?.url?.includes('/auth/register');
+        if (!isAuthEndpoint) {
+          localStorage.removeItem('token');
+          window.location.href = '/login';
+          message.error('登录已过期，请重新登录');
+        } else {
+          message.error(data?.message || '认证失败');
+        }
       } else {
         message.error(data?.message || '请求失败');
       }
