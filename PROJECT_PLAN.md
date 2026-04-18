@@ -976,7 +976,7 @@ Express-delivery-aggregation/
 | T5  | 后端：地址解析服务（正则 + 高德 Geocoding） | ✅ 已完成 |
 | T6  | 后端：定时刷新模块                    | ✅ 已完成 |
 | T7  | 前端：项目初始化 + 路由 + 布局           | ✅ 已完成 |
-| T8  | 前端：登录/注册页面                   | 🔲 未开始 |
+| T8  | 前端：登录/注册页面                   | ✅ 已完成 |
 | T9  | 前端：快递列表 + 物流详情页面             | 🔲 未开始 |
 | T10 | 前端：添加快递弹窗                    | 🔲 未开始 |
 
@@ -1007,6 +1007,10 @@ Express-delivery-aggregation/
 **T7 完成记录**：
 - **完成时间**：2026-04-18
 - **实现说明**：前端项目初始化 + 路由 + 布局完整实现。包含：components/AuthGuard.tsx（路由守卫组件，检查 localStorage 中的 token，未登录时 Navigate replace 到 /login，已登录渲染 Outlet，不会导致死循环因为 AuthGuard 仅包裹受保护路由）；pages/Login.tsx（登录占位页面，居中卡片布局，含跳转注册链接）；pages/Register.tsx（注册占位页面，居中卡片布局，含跳转登录链接）；pages/Dashboard.tsx（Dashboard 布局，使用 Ant Design Layout 组件，Header 含应用标题+退出登录按钮，Content 区域 flex 布局左侧30%快递列表+右侧70%物流详情，退出登录清除 token 并 Navigate replace 到 /login）；App.tsx 重构（BrowserRouter + Routes 配置，/ 默认重定向到 /dashboard，/login 和 /register 为公开路由，/dashboard 被 AuthGuard 包裹为受保护路由）；api/request.ts 优化（401 响应拦截器增加认证端点判断，/auth/login 和 /auth/register 的 401 不触发 token 清除和页面跳转，仅显示后端返回的错误消息，避免登录失败时误显示"登录已过期"）。
+
+**T8 完成记录**：
+- **完成时间**：2026-04-18
+- **实现说明**：前端用户认证可视化交互完整实现。包含：stores/authStore.ts（Zustand 全局状态管理，管理 token/user/isAuthenticated，login 动作调用 API 后将 token 存入 localStorage 并更新状态，register 动作调用注册 API，logout 动作清除 localStorage 和重置状态，fetchUserInfo 动作通过 token 调用 /auth/me 拉取用户信息、失败时自动 logout）；api/auth.ts（认证 API 封装，loginAPI/registerAPI/getMeAPI 三个函数，利用 T7 封装的 Axios 实例，类型安全地对接后端 IApiResponse 格式）；pages/Login.tsx（完整登录页面，渐变背景+圆角卡片+图标圆形背景，Ant Design Form 表单含用户名/密码输入框，表单校验规则：用户名必填3-20字符、密码必填6-32字符，登录按钮 loading 状态，登录成功后 message.success + navigate /dashboard，错误由 Axios 拦截器统一处理）；pages/Register.tsx（完整注册页面，与登录页风格一致，额外包含确认密码字段，用户名校验增加只允许字母数字下划线的正则规则，确认密码使用 dependencies + 自定义 validator 确保一致性，注册成功后 message.success + navigate /login）；components/AuthGuard.tsx 重构（使用 authStore 替代直接 localStorage 读取，token 存在但 user 为空时自动调用 fetchUserInfo 拉取用户信息，拉取期间显示 Spin 加载动画，实现刷新页面后自动恢复用户状态）；pages/Dashboard.tsx 更新（使用 authStore 的 logout 动作替代直接 localStorage.removeItem，Header 区域显示用户头像+用户名）。
 
 ### Phase 2 - 地图可视化
 

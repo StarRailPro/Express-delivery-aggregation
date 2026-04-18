@@ -1,14 +1,16 @@
-import { Layout, Typography, Button } from 'antd';
-import { SendOutlined, LogoutOutlined } from '@ant-design/icons';
+import { Layout, Typography, Button, Avatar } from 'antd';
+import { SendOutlined, LogoutOutlined, UserOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
+import useAuthStore from '@/stores/authStore';
 
 const { Header, Content } = Layout;
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
+  const { user, logout } = useAuthStore();
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    logout();
     navigate('/login', { replace: true });
   };
 
@@ -30,9 +32,17 @@ const Dashboard: React.FC = () => {
             快递信息聚合平台
           </Typography.Title>
         </div>
-        <Button type="text" icon={<LogoutOutlined />} onClick={handleLogout}>
-          退出登录
-        </Button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          {user && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Avatar size="small" icon={<UserOutlined />} style={{ background: '#1677ff' }} />
+              <Typography.Text>{user.username}</Typography.Text>
+            </div>
+          )}
+          <Button type="text" icon={<LogoutOutlined />} onClick={handleLogout}>
+            退出登录
+          </Button>
+        </div>
       </Header>
       <Content>
         <div style={{ display: 'flex', minHeight: 'calc(100vh - 64px)' }}>
