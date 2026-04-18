@@ -978,7 +978,7 @@ Express-delivery-aggregation/
 | T7  | 前端：项目初始化 + 路由 + 布局           | ✅ 已完成 |
 | T8  | 前端：登录/注册页面                   | ✅ 已完成 |
 | T9  | 前端：快递列表 + 物流详情页面             | ✅ 已完成 |
-| T10 | 前端：添加快递弹窗                    | 🔲 未开始 |
+| T10 | 前端：添加快递弹窗                    | ✅ 已完成 |
 
 **T1 完成记录**：
 - **完成时间**：2026-04-15 19:18
@@ -1015,6 +1015,10 @@ Express-delivery-aggregation/
 **T9 完成记录**：
 - **完成时间**：2026-04-18
 - **实现说明**：前端快递列表 + 物流详情核心交互界面完整实现。包含：types/package.ts（前后端对齐的 TS 接口定义，IPackageListItem/IPackageListResponse/IPackageDetailResponse/IPackageCreateParams/IPackageUpdateParams，从 types/index.ts 重导出基础类型 IPackage/ITrackingRecord/PackageStatus）；api/package.ts（快递 CRUD API 封装，listPackagesAPI/getPackageAPI/createPackageAPI/deletePackageAPI/refreshPackageAPI/updatePackageAPI 六个函数，类型安全对接后端 IApiResponse 格式）；stores/packageStore.ts（Zustand 全局状态管理，管理 packages 列表/selectedPackageId/selectedPackage/trackingRecords/listLoading/detailLoading/refreshLoading，fetchPackages 拉取列表，selectPackage 选中快递并拉取详情（含短路判断避免重复请求），clearSelection 清空选中状态，deletePackage 删除快递并自动清空右侧详情（若删除的是当前选中项），refreshPackage 手动刷新物流信息并同步更新列表中的状态，getGroupedPackages 按状态分组计算属性）；components/PackageList.tsx（快递列表组件，按状态分组渲染运输中/已签收/异常三组，每组含状态图标+颜色+数量标签，列表项显示别名或单号+快递公司标签+路线信息，选中项高亮显示（背景色+边框），删除按钮带 Popconfirm 二次确认弹窗，空状态 Empty 提示，加载中 Spin 动画）；components/TrackingDetail.tsx（物流详情组件，未选中时显示优雅空状态（图标+提示文字），选中后展示快递信息卡片（状态图标+别名/单号+快递公司+状态标签+刷新按钮），路线信息卡片（发货地/目的地/最近同步时间），物流轨迹卡片（Ant Design Timeline 时间轴渲染，最新记录蓝色高亮，每条记录显示时间+城市标签+描述，空轨迹显示 Empty），手动刷新按钮带 loading 状态）；pages/Dashboard.tsx 更新（将 PackageList 和 TrackingDetail 组件拼装到 T7 搭建的左右 30%/70% 布局中，实现左侧点击、右侧联动的完美交互）。TypeScript 编译零错误通过。
+
+**T10 完成记录**：
+- **完成时间**：2026-04-18
+- **实现说明**：前端添加快递弹窗完整实现。包含：components/AddPackageModal.tsx（Ant Design Modal + Form 组件，含快递单号必填字段+别名选填字段，单号校验规则：必填+最大50字符+正则禁止中文和空格 `/^[^\s\u4e00-\u9fa5]+$/`，别名校验：最大50字符；提交逻辑：调用 createPackageAPI 创建快递，成功后 message.success 提示包含识别到的快递公司名称，关闭弹窗，调用 packageStore.fetchPackages 刷新左侧快递列表；防重复点击：confirmLoading 绑定 loading 状态；表单清空：成功后 form.resetFields() 清空、取消时也 form.resetFields()、destroyOnClose 确保弹窗关闭时销毁内部状态；错误处理：Ant Design Form 校验失败时自动显示错误提示不触发 API 调用，API 错误由 Axios 拦截器统一处理）；pages/Dashboard.tsx 更新（Header 右侧新增醒目的"添加快递"按钮 type=primary icon=PlusOutlined，useState 控制 addModalOpen 状态，AddPackageModal 组件挂载在 Layout 内）。TypeScript 编译零错误通过。
 
 ### Phase 2 - 地图可视化
 

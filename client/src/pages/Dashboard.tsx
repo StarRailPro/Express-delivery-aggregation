@@ -1,15 +1,18 @@
+import { useState } from 'react';
 import { Layout, Typography, Button, Avatar } from 'antd';
-import { SendOutlined, LogoutOutlined, UserOutlined } from '@ant-design/icons';
+import { SendOutlined, LogoutOutlined, UserOutlined, PlusOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '@/stores/authStore';
 import PackageList from '@/components/PackageList';
 import TrackingDetail from '@/components/TrackingDetail';
+import AddPackageModal from '@/components/AddPackageModal';
 
 const { Header, Content } = Layout;
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
+  const [addModalOpen, setAddModalOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -35,6 +38,13 @@ const Dashboard: React.FC = () => {
           </Typography.Title>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => setAddModalOpen(true)}
+          >
+            添加快递
+          </Button>
           {user && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <Avatar size="small" icon={<UserOutlined />} style={{ background: '#1677ff' }} />
@@ -71,6 +81,7 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </Content>
+      <AddPackageModal open={addModalOpen} onClose={() => setAddModalOpen(false)} />
     </Layout>
   );
 };

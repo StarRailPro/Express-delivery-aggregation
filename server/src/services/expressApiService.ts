@@ -375,13 +375,24 @@ class ExpressApiService {
 
   private mockGetTrackingInfo(trackingNo: string, carrierCode: string): GetTrackingResult {
     const now = new Date();
-    const traces = this.generateMockTraces(carrierCode, now);
+    const lastChar = trackingNo.slice(-1);
+    const lastDigit = /\d/.test(lastChar) ? parseInt(lastChar, 10) : 0;
+
+    let mockStatus: 'in_transit' | 'delivered' | 'exception';
+    if (lastDigit <= 6) {
+      mockStatus = 'in_transit';
+    } else if (lastDigit <= 8) {
+      mockStatus = 'delivered';
+    } else {
+      mockStatus = 'exception';
+    }
+
+    const traces = this.generateMockTraces(carrierCode, now, mockStatus);
     const fromCity = traces.length > 0 ? traces[0].city : '';
     const toCity = traces.length > 0 ? traces[traces.length - 1].city : '';
 
-    const isDelivered = traces.some((t) => t.description.includes('已签收'));
     const result: GetTrackingResult = {
-      status: isDelivered ? 'delivered' : 'in_transit',
+      status: mockStatus,
       traces,
       fromCity,
       toCity,
@@ -389,12 +400,16 @@ class ExpressApiService {
 
     setCachedTracking(trackingNo, result);
     console.log(
-      `[ExpressApi] Mock模式 - 生成物流轨迹: ${trackingNo} (${carrierCode}), ${traces.length}条记录`,
+      `[ExpressApi] Mock模式 - 生成物流轨迹: ${trackingNo} (${carrierCode}), 状态: ${mockStatus}, ${traces.length}条记录`,
     );
     return result;
   }
 
-  private generateMockTraces(carrierCode: string, baseTime: Date): TrackingTrace[] {
+  private generateMockTraces(
+    carrierCode: string,
+    baseTime: Date,
+    status: 'in_transit' | 'delivered' | 'exception',
+  ): TrackingTrace[] {
     const carrierRoutes: Record<string, { from: string; to: string; cities: string[] }> = {
       shunfeng: {
         from: '深圳市',
@@ -439,10 +454,21 @@ class ExpressApiService {
     };
 
     const traces: TrackingTrace[] = [];
-    const hoursPerStep = Math.floor(24 / route.cities.length);
+    const totalCities = route.cities.length;
+    let stopIndex: number;
 
-    for (let i = 0; i < route.cities.length; i++) {
-      const hoursAgo = (route.cities.length - 1 - i) * hoursPerStep;
+    if (status === 'delivered') {
+      stopIndex = totalCities - 1;
+    } else if (status === 'exception') {
+      stopIndex = Math.min(2, totalCities - 1);
+    } else {
+      stopIndex = Math.floor(Math.random() * (totalCities - 2)) + 1;
+    }
+
+    const hoursPerStep = Math.floor(24 / totalCities);
+
+    for (let i = 0; i <= stopIndex; i++) {
+      const hoursAgo = (stopIndex - i) * hoursPerStep;
       const timestamp = new Date(baseTime.getTime() - hoursAgo * 3600 * 1000);
 
       if (i === 0) {
@@ -451,7 +477,7 @@ class ExpressApiService {
           description: `【${route.cities[i]}】快件已从${route.cities[i]}发出`,
           city: route.cities[i],
         });
-      } else if (i === route.cities.length - 1) {
+      } else if (i === totalCities - 1 && status === 'delivered') {
         const arrivedTime = new Date(timestamp.getTime() - 2 * 3600 * 1000);
         traces.push({
           timestamp: arrivedTime.toISOString().replace('T', ' ').substring(0, 19),
@@ -464,6 +490,24 @@ class ExpressApiService {
           description: `【${route.cities[i]}】快件已签收，签收人：本人`,
           city: route.cities[i],
         });
+      } else if (status === 'exception' && i === stopIndex) {
+        const arrivedTime = new Date(timestamp.getTime() - 1 * 3600 * 1000);
+        traces.push({
+          timestamp: arrivedTime.toISOString().replace('T', ' ').substring(0, 19),
+          description: `【${route.cities[i]}】快件已到达${route.cities[i]}转运中心`,
+          city: route.cities[i],
+        });
+        const exceptionTime = new Date(timestamp.getTime());
+        const exceptionMsgs = [
+          '快件滞留，原因：地址不详，请联系派送员',
+          '派送失败，原因：收件人不在，请预约再次派送',
+          '快件异常，原因：包装破损，正在核实处理',
+        ];
+        traces.push({
+          timestamp: exceptionTime.toISOString().replace('T', ' ').substring(0, 19),
+          description: `【${route.cities[i]}】${exceptionMsgs[Math.floor(Math.random() * exceptionMsgs.length)]}`,
+          city: route.cities[i],
+        });
       } else {
         const arrivedTime = new Date(timestamp.getTime() - 1 * 3600 * 1000);
         traces.push({
@@ -471,12 +515,15 @@ class ExpressApiService {
           description: `【${route.cities[i]}】快件已到达${route.cities[i]}转运中心`,
           city: route.cities[i],
         });
-        const departedTime = new Date(timestamp.getTime());
-        traces.push({
-          timestamp: departedTime.toISOString().replace('T', ' ').substring(0, 19),
-          description: `【${route.cities[i]}】快件已从${route.cities[i]}发出，下一站${route.cities[i + 1]}转运中心`,
-          city: route.cities[i],
-        });
+        if (i < stopIndex || status === 'in_transit') {
+          const departedTime = new Date(timestamp.getTime());
+          const nextCity = route.cities[i + 1] || '目的地';
+          traces.push({
+            timestamp: departedTime.toISOString().replace('T', ' ').substring(0, 19),
+            description: `【${route.cities[i]}】快件已从${route.cities[i]}发出，下一站${nextCity}转运中心`,
+            city: route.cities[i],
+          });
+        }
       }
     }
 
