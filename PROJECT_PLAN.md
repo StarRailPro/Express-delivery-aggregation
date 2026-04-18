@@ -977,7 +977,7 @@ Express-delivery-aggregation/
 | T6  | 后端：定时刷新模块                    | ✅ 已完成 |
 | T7  | 前端：项目初始化 + 路由 + 布局           | ✅ 已完成 |
 | T8  | 前端：登录/注册页面                   | ✅ 已完成 |
-| T9  | 前端：快递列表 + 物流详情页面             | 🔲 未开始 |
+| T9  | 前端：快递列表 + 物流详情页面             | ✅ 已完成 |
 | T10 | 前端：添加快递弹窗                    | 🔲 未开始 |
 
 **T1 完成记录**：
@@ -1011,6 +1011,10 @@ Express-delivery-aggregation/
 **T8 完成记录**：
 - **完成时间**：2026-04-18
 - **实现说明**：前端用户认证可视化交互完整实现。包含：stores/authStore.ts（Zustand 全局状态管理，管理 token/user/isAuthenticated，login 动作调用 API 后将 token 存入 localStorage 并更新状态，register 动作调用注册 API，logout 动作清除 localStorage 和重置状态，fetchUserInfo 动作通过 token 调用 /auth/me 拉取用户信息、失败时自动 logout）；api/auth.ts（认证 API 封装，loginAPI/registerAPI/getMeAPI 三个函数，利用 T7 封装的 Axios 实例，类型安全地对接后端 IApiResponse 格式）；pages/Login.tsx（完整登录页面，渐变背景+圆角卡片+图标圆形背景，Ant Design Form 表单含用户名/密码输入框，表单校验规则：用户名必填3-20字符、密码必填6-32字符，登录按钮 loading 状态，登录成功后 message.success + navigate /dashboard，错误由 Axios 拦截器统一处理）；pages/Register.tsx（完整注册页面，与登录页风格一致，额外包含确认密码字段，用户名校验增加只允许字母数字下划线的正则规则，确认密码使用 dependencies + 自定义 validator 确保一致性，注册成功后 message.success + navigate /login）；components/AuthGuard.tsx 重构（使用 authStore 替代直接 localStorage 读取，token 存在但 user 为空时自动调用 fetchUserInfo 拉取用户信息，拉取期间显示 Spin 加载动画，实现刷新页面后自动恢复用户状态）；pages/Dashboard.tsx 更新（使用 authStore 的 logout 动作替代直接 localStorage.removeItem，Header 区域显示用户头像+用户名）。
+
+**T9 完成记录**：
+- **完成时间**：2026-04-18
+- **实现说明**：前端快递列表 + 物流详情核心交互界面完整实现。包含：types/package.ts（前后端对齐的 TS 接口定义，IPackageListItem/IPackageListResponse/IPackageDetailResponse/IPackageCreateParams/IPackageUpdateParams，从 types/index.ts 重导出基础类型 IPackage/ITrackingRecord/PackageStatus）；api/package.ts（快递 CRUD API 封装，listPackagesAPI/getPackageAPI/createPackageAPI/deletePackageAPI/refreshPackageAPI/updatePackageAPI 六个函数，类型安全对接后端 IApiResponse 格式）；stores/packageStore.ts（Zustand 全局状态管理，管理 packages 列表/selectedPackageId/selectedPackage/trackingRecords/listLoading/detailLoading/refreshLoading，fetchPackages 拉取列表，selectPackage 选中快递并拉取详情（含短路判断避免重复请求），clearSelection 清空选中状态，deletePackage 删除快递并自动清空右侧详情（若删除的是当前选中项），refreshPackage 手动刷新物流信息并同步更新列表中的状态，getGroupedPackages 按状态分组计算属性）；components/PackageList.tsx（快递列表组件，按状态分组渲染运输中/已签收/异常三组，每组含状态图标+颜色+数量标签，列表项显示别名或单号+快递公司标签+路线信息，选中项高亮显示（背景色+边框），删除按钮带 Popconfirm 二次确认弹窗，空状态 Empty 提示，加载中 Spin 动画）；components/TrackingDetail.tsx（物流详情组件，未选中时显示优雅空状态（图标+提示文字），选中后展示快递信息卡片（状态图标+别名/单号+快递公司+状态标签+刷新按钮），路线信息卡片（发货地/目的地/最近同步时间），物流轨迹卡片（Ant Design Timeline 时间轴渲染，最新记录蓝色高亮，每条记录显示时间+城市标签+描述，空轨迹显示 Empty），手动刷新按钮带 loading 状态）；pages/Dashboard.tsx 更新（将 PackageList 和 TrackingDetail 组件拼装到 T7 搭建的左右 30%/70% 布局中，实现左侧点击、右侧联动的完美交互）。TypeScript 编译零错误通过。
 
 ### Phase 2 - 地图可视化
 

@@ -2,6 +2,8 @@ import { Layout, Typography, Button, Avatar } from 'antd';
 import { SendOutlined, LogoutOutlined, UserOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '@/stores/authStore';
+import PackageList from '@/components/PackageList';
+import TrackingDetail from '@/components/TrackingDetail';
 
 const { Header, Content } = Layout;
 
@@ -55,7 +57,7 @@ const Dashboard: React.FC = () => {
               overflow: 'auto',
             }}
           >
-            <Typography.Text type="secondary">快递列表区域（待实现）</Typography.Text>
+            <PackageList />
           </div>
           <div
             style={{
@@ -65,7 +67,7 @@ const Dashboard: React.FC = () => {
               overflow: 'auto',
             }}
           >
-            <Typography.Text type="secondary">物流详情区域（待实现）</Typography.Text>
+            <TrackingDetail />
           </div>
         </div>
       </Content>
