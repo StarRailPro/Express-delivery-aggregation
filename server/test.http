@@ -263,3 +263,106 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWUxZ
 
 ### 36. 无Token刷新快递 - 应返回401
 POST http://localhost:3000/api/packages/PACKAGE_ID_HERE/refresh
+
+### ============================================================
+### T5 地址解析服务测试
+### 注意：请先执行登录接口，获取 Token 后替换下面的 Token
+### 当前 .env 中 AMAP_SERVER_KEY 为空或 mock，Geocoding 将使用 Mock 字典
+### ============================================================
+
+### 37. 地址解析 - 从【北京市】格式提取城市名 + Geocoding
+POST http://localhost:3000/api/geocoding/parse
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWUxZDUwYThkM2ZmNGUzYTM0MmMzYWIiLCJ1c2VybmFtZSI6InRlc3R1c2VyIiwiaWF0IjoxNzc2NDQyNTExLCJleHAiOjE3NzcwNDczMTF9.PVTSn9Hhp_976Ca0OJAfh_qJWEwLUrFLQwznsdXEzkY
+
+{
+  "text": "快件已到达【北京市】北京转运中心"
+}
+
+### 38. 地址解析 - 从"广东深圳市发往"格式提取城市名
+POST http://localhost:3000/api/geocoding/parse
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWUxZDUwYThkM2ZmNGUzYTM0MmMzYWIiLCJ1c2VybmFtZSI6InRlc3R1c2VyIiwiaWF0IjoxNzc2NDQyNTExLCJleHAiOjE3NzcwNDczMTF9.PVTSn9Hhp_976Ca0OJAfh_qJWEwLUrFLQwznsdXEzkY
+
+{
+  "text": "广东深圳市发往上海市"
+}
+
+### 39. 地址解析 - 从"浙江省杭州市"格式提取
+POST http://localhost:3000/api/geocoding/parse
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWUxZDUwYThkM2ZmNGUzYTM0MmMzYWIiLCJ1c2VybmFtZSI6InRlc3R1c2VyIiwiaWF0IjoxNzc2NDQyNTExLCJleHAiOjE3NzcwNDczMTF9.PVTSn9Hhp_976Ca0OJAfh_qJWEwLUrFLQwznsdXEzkY
+
+{
+  "text": "【浙江省杭州市】快件已从杭州转运中心发出"
+}
+
+### 40. 地址解析 - 无城市信息的文本
+POST http://localhost:3000/api/geocoding/parse
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWUxZDUwYThkM2ZmNGUzYTM0MmMzYWIiLCJ1c2VybmFtZSI6InRlc3R1c2VyIiwiaWF0IjoxNzc2NDQyNTExLCJleHAiOjE3NzcwNDczMTF9.PVTSn9Hhp_976Ca0OJAfh_qJWEwLUrFLQwznsdXEzkY
+
+{
+  "text": "快件正在运输中"
+}
+
+### 41. 地址解析 - 空文本应返回400
+POST http://localhost:3000/api/geocoding/parse
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWUxZDUwYThkM2ZmNGUzYTM0MmMzYWIiLCJ1c2VybmFtZSI6InRlc3R1c2VyIiwiaWF0IjoxNzc2NDQyNTExLCJleHAiOjE3NzcwNDczMTF9.PVTSn9Hhp_976Ca0OJAfh_qJWEwLUrFLQwznsdXEzkY
+
+{
+  "text": ""
+}
+
+### 42. 批量地址解析 - 完整物流轨迹解析+Geocoding
+POST http://localhost:3000/api/geocoding/batch
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWUxZDUwYThkM2ZmNGUzYTM0MmMzYWIiLCJ1c2VybmFtZSI6InRlc3R1c2VyIiwiaWF0IjoxNzc2NDQyNTExLCJleHAiOjE3NzcwNDczMTF9.PVTSn9Hhp_976Ca0OJAfh_qJWEwLUrFLQwznsdXEzkY
+
+{
+  "traces": [
+    { "description": "【深圳市】快件已从深圳发出", "city": "深圳市" },
+    { "description": "【广州市】快件已到达广州转运中心", "city": "广州市" },
+    { "description": "【武汉市】快件已到达武汉转运中心", "city": "武汉市" },
+    { "description": "【郑州市】快件已从郑州发出，下一站北京转运中心", "city": "郑州市" },
+    { "description": "【北京市】快件已签收，签收人：本人", "city": "北京市" }
+  ]
+}
+
+### 43. 批量地址解析 - 无city字段，从description自动解析
+POST http://localhost:3000/api/geocoding/batch
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWUxZDUwYThkM2ZmNGUzYTM0MmMzYWIiLCJ1c2VybmFtZSI6InRlc3R1c2VyIiwiaWF0IjoxNzc2NDQyNTExLCJleHAiOjE3NzcwNDczMTF9.PVTSn9Hhp_976Ca0OJAfh_qJWEwLUrFLQwznsdXEzkY
+
+{
+  "traces": [
+    { "description": "快件已到达【成都市】成都转运中心" },
+    { "description": "快件已从四川成都市发往重庆市" },
+    { "description": "【重庆市】快件已到达重庆分拨中心" },
+    { "description": "快件正在派送中" }
+  ]
+}
+
+### 44. 添加快递并验证自动地址解析（完整链路测试）
+# 创建快递后，查看返回的 trackingRecords 中每条记录的 location 字段应包含经纬度
+# 注意：如果返回"快递已存在"，请换一个未使用过的单号
+POST http://localhost:3000/api/packages
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWUxZDUwYThkM2ZmNGUzYTM0MmMzYWIiLCJ1c2VybmFtZSI6InRlc3R1c2VyIiwiaWF0IjoxNzc2NDg4MTE4LCJleHAiOjE3NzcwOTI5MTh9.j3-FPRBpsjFiVoPAOeMwHVfqLl1hUsuWzVzZ-HodFR0
+
+{
+  "trackingNo": "SF2026T5TEST1010",
+  "alias": "T5地址解析测试-顺丰"
+}
+
+### 45. 获取快递详情 - 验证 trackingRecords 中的 location 字段
+# 把 PACKAGE_ID_HERE 替换为上面创建快递后返回的 id
+# 每条 trackingRecord 应包含 location: { lng, lat } 或 location: null
+GET http://localhost:3000/api/packages/69e30edded862a21742ee410
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWUxZDUwYThkM2ZmNGUzYTM0MmMzYWIiLCJ1c2VybmFtZSI6InRlc3R1c2VyIiwiaWF0IjoxNzc2NDg4MTE4LCJleHAiOjE3NzcwOTI5MTh9.j3-FPRBpsjFiVoPAOeMwHVfqLl1hUsuWzVzZ-HodFR0
+
+### 46. 刷新快递 - 验证刷新后 location 字段也被填充
+# 把 PACKAGE_ID_HERE 替换为上面创建快递后返回的 id
+POST http://localhost:3000/api/packages/69e30edded862a21742ee410/refresh
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWUxZDUwYThkM2ZmNGUzYTM0MmMzYWIiLCJ1c2VybmFtZSI6InRlc3R1c2VyIiwiaWF0IjoxNzc2NDg4MTE4LCJleHAiOjE3NzcwOTI5MTh9.j3-FPRBpsjFiVoPAOeMwHVfqLl1hUsuWzVzZ-HodFR0

@@ -973,7 +973,7 @@ Express-delivery-aggregation/
 | T2  | 后端：用户注册/登录 + JWT 认证          | ✅ 已完成 |
 | T3  | 后端：快递数据模型 + CRUD 接口          | ✅ 已完成 |
 | T4  | 后端：接入快递鸟/快递100 API           | ✅ 已完成 |
-| T5  | 后端：地址解析服务（正则 + 高德 Geocoding） | 🔲 未开始 |
+| T5  | 后端：地址解析服务（正则 + 高德 Geocoding） | ✅ 已完成 |
 | T6  | 后端：定时刷新模块                    | 🔲 未开始 |
 | T7  | 前端：项目初始化 + 路由 + 布局           | 🔲 未开始 |
 | T8  | 前端：登录/注册页面                   | 🔲 未开始 |
@@ -995,6 +995,10 @@ Express-delivery-aggregation/
 **T4 完成记录**：
 - **完成时间**：2026-04-17
 - **实现说明**：后端接入快递鸟/快递100 API 完整实现，含 Mock 降级机制。包含：ExpressApiService 类（封装快递鸟+快递100双供应商API调用，detectCarrier自动识别快递公司、getTrackingInfo查询物流轨迹）；Mock 降级机制（当 EXPRESS_API_KEY 为空或为 mock 时不发真实网络请求，直接返回逼真模拟数据，包含10家快递公司的完整物流时间线，覆盖从发货到签收的全流程）；重试机制 retryWithBackoff（最多3次重试，指数退避1s/2s/4s，可配置 shouldRetry 策略）；API 调用计数器 apiCounterService（记录每次API调用的名称/时间/成功与否/耗时/错误信息，支持按日统计和按API分类统计）；缓存服务 cacheService（内存缓存+TTL自动过期，快递公司识别结果按单号前缀缓存24h，物流轨迹按单号缓存30min，自动清理过期条目）；packageController 重构（create创建时自动调用ExpressApiService获取物流信息并写入TrackingRecord，新增refresh接口支持手动刷新物流信息，已签收快递跳过刷新）；路由新增 POST /api/packages/:id/refresh；.env 配置项 EXPRESS_API_PROVIDER/EXPRESS_API_KEY/EXPRESS_API_SECRET。
+
+**T5 完成记录**：
+- **完成时间**：2026-04-17
+- **实现说明**：后端地址解析服务完整实现，包含 E1 正则解析、E2 Geocoding（Mock 降级）、E3 坐标缓存。包含：cityParser.ts（10种正则模式匹配物流文本中的城市名，支持【xxx市】、广东深圳市、发往/到达+城市等格式，排除"转运中心"等非城市关键词，自动清理"省+市"格式为纯市名）；cityMap.ts（100+中国主要一二线城市经纬度硬编码字典，含城市别名映射如"北京"→"北京市"，未知城市返回中国中心点坐标）；geocodingService.ts（Mock模式：AMAP_SERVER_KEY为空或mock时使用硬编码字典，不发真实网络请求；真实模式：调用高德Geocoding API + 重试 + API调用计数，失败时自动降级到Mock）；cacheService.ts 更新（新增 geocodingCache 实例，getCachedGeocoding/setCachedGeocoding 函数，坐标缓存TTL 7天）；trackingSyncService.ts（enrichTracesWithCoordinates 批量解析+Geocoding，syncTrackingRecords 创建含坐标的 TrackingRecord，updatePackageCities 更新快递的 fromCity/toCity）；packageController.ts 重构（create 和 refresh 均通过 trackingSyncService 自动解析城市名并填充经纬度坐标到 TrackingRecord.location）；geocodingController.ts + routes/geocoding.ts（POST /api/geocoding/parse 单条文本解析+Geocoding，POST /api/geocoding/batch 批量轨迹解析+Geocoding）；app.ts 注册 /api/geocoding 路由；test.http 新增 T5 测试用例（#37-#46，覆盖单条解析、批量解析、完整链路测试）。
 
 ### Phase 2 - 地图可视化
 

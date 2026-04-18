@@ -6,6 +6,7 @@ import { successResponse } from '../utils/responseHandler';
 import { AppError } from '../middleware/errorHandler';
 import { AuthenticatedRequest } from '../middleware/auth';
 import expressApiService from '../services/expressApiService';
+import { syncTrackingRecords, updatePackageCities } from '../services/trackingSyncService';
 import { Types } from 'mongoose';
 
 export async function create(
@@ -63,21 +64,12 @@ export async function create(
     });
 
     if (trackingResult && trackingResult.traces.length > 0) {
-      const recordIds: Types.ObjectId[] = [];
-      for (const trace of trackingResult.traces) {
-        const record = await TrackingRecord.create({
-          packageId: pkg._id,
-          timestamp: new Date(trace.timestamp),
-          description: trace.description,
-          city: trace.city,
-          location: null,
-          syncedAt: new Date(),
-        });
-        recordIds.push(record._id as Types.ObjectId);
-      }
+      const recordIds = await syncTrackingRecords(pkg._id as Types.ObjectId, trackingResult.traces);
       await Package.findByIdAndUpdate(pkg._id, {
         $push: { trackingRecords: { $each: recordIds } },
       });
+
+      await updatePackageCities(pkg._id as Types.ObjectId, trackingResult.traces);
     }
 
     const updatedPkg = await Package.findById(pkg._id);
@@ -332,18 +324,7 @@ export async function refresh(
 
     await TrackingRecord.deleteMany({ packageId: pkg._id });
 
-    const recordIds: Types.ObjectId[] = [];
-    for (const trace of trackingResult.traces) {
-      const record = await TrackingRecord.create({
-        packageId: pkg._id,
-        timestamp: new Date(trace.timestamp),
-        description: trace.description,
-        city: trace.city,
-        location: null,
-        syncedAt: new Date(),
-      });
-      recordIds.push(record._id as Types.ObjectId);
-    }
+    const recordIds = await syncTrackingRecords(pkg._id as Types.ObjectId, trackingResult.traces);
 
     const updateData: Record<string, unknown> = {
       lastSyncAt: new Date(),
@@ -353,12 +334,8 @@ export async function refresh(
     if (trackingResult.status === 'delivered' || trackingResult.status === 'exception') {
       updateData.status = trackingResult.status;
     }
-    if (trackingResult.fromCity) {
-      updateData.fromCity = trackingResult.fromCity;
-    }
-    if (trackingResult.toCity) {
-      updateData.toCity = trackingResult.toCity;
-    }
+
+    await updatePackageCities(pkg._id as Types.ObjectId, trackingResult.traces);
 
     const updatedPkg = await Package.findOneAndUpdate({ _id: id, userId }, updateData, {
       new: true,

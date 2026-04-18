@@ -5,6 +5,7 @@ import { errorHandler } from './middleware/errorHandler';
 import healthRouter from './routes/health';
 import authRouter from './routes/auth';
 import packageRouter from './routes/package';
+import geocodingRouter from './routes/geocoding';
 
 const app = express();
 
@@ -17,6 +18,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/health', healthRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/packages', packageRouter);
+app.use('/api/geocoding', geocodingRouter);
 
 app.use(errorHandler);
 

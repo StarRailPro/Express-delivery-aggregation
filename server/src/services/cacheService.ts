@@ -63,6 +63,7 @@ class MemoryCache {
 
 const carrierCache = new MemoryCache();
 const trackingCache = new MemoryCache();
+const geocodingCache = new MemoryCache();
 
 export interface CarrierCacheValue {
   carrier: string;
@@ -108,4 +109,18 @@ export function setCachedTracking(
   trackingCache.set(`tracking:${trackingNo}`, value, ttlMs ?? 30 * 60 * 1000);
 }
 
-export { carrierCache, trackingCache };
+export interface GeocodingCacheValue {
+  lng: number;
+  lat: number;
+  city: string;
+}
+
+export function getCachedGeocoding(city: string): GeocodingCacheValue | null {
+  return geocodingCache.get<GeocodingCacheValue>(`geocoding:${city}`);
+}
+
+export function setCachedGeocoding(city: string, value: GeocodingCacheValue): void {
+  geocodingCache.set(`geocoding:${city}`, value, 7 * 24 * 60 * 60 * 1000);
+}
+
+export { carrierCache, trackingCache, geocodingCache };
