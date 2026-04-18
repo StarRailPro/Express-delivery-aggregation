@@ -6,6 +6,7 @@ import healthRouter from './routes/health';
 import authRouter from './routes/auth';
 import packageRouter from './routes/package';
 import geocodingRouter from './routes/geocoding';
+import { startScheduler } from './services/scheduler';
 
 const app = express();
 
@@ -29,6 +30,7 @@ async function connectDatabase(): Promise<void> {
   try {
     await mongoose.connect(MONGODB_URI);
     console.log(`[MongoDB] 连接成功: ${MONGODB_URI}`);
+    startScheduler();
   } catch (error) {
     console.error('[MongoDB] 连接失败:', error);
     console.error('[MongoDB] 请确保 MongoDB 服务已启动，或检查 MONGODB_URI 配置');

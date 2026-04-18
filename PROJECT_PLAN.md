@@ -974,7 +974,7 @@ Express-delivery-aggregation/
 | T3  | 后端：快递数据模型 + CRUD 接口          | ✅ 已完成 |
 | T4  | 后端：接入快递鸟/快递100 API           | ✅ 已完成 |
 | T5  | 后端：地址解析服务（正则 + 高德 Geocoding） | ✅ 已完成 |
-| T6  | 后端：定时刷新模块                    | 🔲 未开始 |
+| T6  | 后端：定时刷新模块                    | ✅ 已完成 |
 | T7  | 前端：项目初始化 + 路由 + 布局           | 🔲 未开始 |
 | T8  | 前端：登录/注册页面                   | 🔲 未开始 |
 | T9  | 前端：快递列表 + 物流详情页面             | 🔲 未开始 |
@@ -999,6 +999,10 @@ Express-delivery-aggregation/
 **T5 完成记录**：
 - **完成时间**：2026-04-17
 - **实现说明**：后端地址解析服务完整实现，包含 E1 正则解析、E2 Geocoding（Mock 降级）、E3 坐标缓存。包含：cityParser.ts（10种正则模式匹配物流文本中的城市名，支持【xxx市】、广东深圳市、发往/到达+城市等格式，排除"转运中心"等非城市关键词，自动清理"省+市"格式为纯市名）；cityMap.ts（100+中国主要一二线城市经纬度硬编码字典，含城市别名映射如"北京"→"北京市"，未知城市返回中国中心点坐标）；geocodingService.ts（Mock模式：AMAP_SERVER_KEY为空或mock时使用硬编码字典，不发真实网络请求；真实模式：调用高德Geocoding API + 重试 + API调用计数，失败时自动降级到Mock）；cacheService.ts 更新（新增 geocodingCache 实例，getCachedGeocoding/setCachedGeocoding 函数，坐标缓存TTL 7天）；trackingSyncService.ts（enrichTracesWithCoordinates 批量解析+Geocoding，syncTrackingRecords 创建含坐标的 TrackingRecord，updatePackageCities 更新快递的 fromCity/toCity）；packageController.ts 重构（create 和 refresh 均通过 trackingSyncService 自动解析城市名并填充经纬度坐标到 TrackingRecord.location）；geocodingController.ts + routes/geocoding.ts（POST /api/geocoding/parse 单条文本解析+Geocoding，POST /api/geocoding/batch 批量轨迹解析+Geocoding）；app.ts 注册 /api/geocoding 路由；test.http 新增 T5 测试用例（#37-#46，覆盖单条解析、批量解析、完整链路测试）。
+
+**T6 完成记录**：
+- **完成时间**：2026-04-18
+- **实现说明**：后端定时刷新模块完整实现，包含 D3 定时刷新、D4 签收降频、D5 手动刷新（已有）、并发控制。包含：utils/concurrency.ts（通用并发控制工具 runWithConcurrency，基于批次+Promise.all 实现，每批最多同时执行 N 个任务，批次间可配置延迟，每个任务独立 try/catch 互不影响）；services/scheduler.ts（核心调度器：node-cron 配置每2小时执行一次 `0 */2 * * *`，查询所有 status=in_transit 或 status=exception 且未归档的快递，排除已签收(delivered)的快递，通过并发控制每次最多5个API请求，刷新逻辑复用 trackingSyncService 同步物流轨迹+城市坐标，自动更新快递状态（签收/异常），isRunning 防重入机制防止任务重叠执行，刷新日志记录每次执行的时间/处理数量/成功/失败/跳过数，日志上限100条自动淘汰旧记录，支持环境变量 SCHEDULER_CRON_EXPRESSION 自定义 cron 表达式，cron.validate() 校验表达式合法性，提供 startScheduler/stopScheduler/getRefreshLogs/executeScheduledRefresh 导出接口）；app.ts 更新（MongoDB 连接成功后自动启动调度器 startScheduler()）；.env.example 更新（新增 SCHEDULER_CRON_EXPRESSION 配置项及注释说明）。
 
 ### Phase 2 - 地图可视化
 
