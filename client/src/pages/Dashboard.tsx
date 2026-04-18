@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import useAuthStore from '@/stores/authStore';
 import PackageList from '@/components/PackageList';
 import TrackingDetail from '@/components/TrackingDetail';
+import MapView from '@/components/MapView';
 import AddPackageModal from '@/components/AddPackageModal';
 
 const { Header, Content } = Layout;
@@ -72,12 +73,32 @@ const Dashboard: React.FC = () => {
           <div
             style={{
               width: '70%',
+              display: 'flex',
+              flexDirection: 'column',
               background: '#fafafa',
-              padding: 24,
-              overflow: 'auto',
+              overflow: 'hidden',
             }}
           >
-            <TrackingDetail />
+            <div
+              style={{
+                flex: '1 1 55%',
+                minHeight: 300,
+                position: 'relative',
+              }}
+            >
+              <MapView />
+            </div>
+            <div
+              style={{
+                flex: '1 1 45%',
+                borderTop: '1px solid #f0f0f0',
+                padding: 24,
+                overflow: 'auto',
+                background: '#fff',
+              }}
+            >
+              <TrackingDetail />
+            </div>
           </div>
         </div>
       </Content>

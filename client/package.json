@@ -11,6 +11,7 @@
     "format": "prettier --write \"src/**/*.{ts,tsx}\""
   },
   "dependencies": {
+    "@amap/amap-jsapi-loader": "^1.0.1",
     "@ant-design/icons": "^5.6.1",
     "antd": "^5.29.3",
     "axios": "^1.15.0",

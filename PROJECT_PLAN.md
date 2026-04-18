@@ -1024,7 +1024,7 @@ Express-delivery-aggregation/
 
 | 任务  | 描述               | 状态     |
 | --- | ---------------- | ------ |
-| T11 | 前端：集成高德地图 JS API | 🔲 未开始 |
+| T11 | 前端：集成高德地图 JS API | ✅ 已完成 |
 | T12 | 前端：地图标注快递当前位置    | 🔲 未开始 |
 | T13 | 前端：运输轨迹路线绘制      | 🔲 未开始 |
 | T14 | 前端：多快递同时展示       | 🔲 未开始 |
@@ -1038,4 +1038,8 @@ Express-delivery-aggregation/
 | T17 | 快递状态变更通知     | 🔲 未开始 |
 | T18 | 移动端适配        | 🔲 未开始 |
 | T19 | API 调用统计面板   | 🔲 未开始 |
+
+**T11 完成记录**：
+- **完成时间**：2026-04-18
+- **实现说明**：前端集成高德地图 JS API 2.0 完整实现，含 Mock 降级模式。包含：utils/amapLoader.ts（基于 @amap/amap-jsapi-loader 的动态加载器，单例模式防止重复加载，isMockMode 判断 Key 是否为空/mock，支持 VITE_AMAP_SECURITY_CODE 安全密钥配置，resetLoader 清理缓存供组件卸载时调用）；components/MapView.tsx（地图容器组件，Mock 模式渲染带渐变背景+缩放/平移 UI 的占位 Div，真实模式通过 loadAMap 初始化 AMap.Map 实例，默认中心点 [104.195397, 35.86166] 中国地理中心，默认缩放级别 4，添加 Scale 和 ToolBar 控件，组件卸载时调用 map.destroy() 销毁实例防止内存泄漏，destroyed 标志防止卸载后异步回调执行，加载中/加载失败均有友好 UI 提示）；pages/Dashboard.tsx 更新（右侧 70% 区域改为上下分栏布局，上方 55% 放置 MapView 地图组件，下方 45% 放置 TrackingDetail 物流详情，未选中快递时地图展示全图）；client/.env.example 创建（VITE_AMAP_JS_KEY 默认 mock、VITE_AMAP_SECURITY_CODE 默认空）；.env.example 根目录更新（新增 AMAP_SECURITY_CODE 配置项）。TypeScript 编译零错误通过。
 
