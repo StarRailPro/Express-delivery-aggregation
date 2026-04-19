@@ -1033,11 +1033,15 @@ Express-delivery-aggregation/
 
 | 任务  | 描述           | 状态     |
 | --- | ------------ | ------ |
-| T15 | 快递归档功能       | 🔲 未开始 |
+| T15 | 搜索、过滤与数据统计板 | ✅ 已完成 |
 | T16 | 签收后自动降频/停止刷新 | 🔲 未开始 |
 | T17 | 快递状态变更通知     | 🔲 未开始 |
 | T18 | 移动端适配        | 🔲 未开始 |
 | T19 | API 调用统计面板   | 🔲 未开始 |
+
+**T15 完成记录**：
+- **完成时间**：2026-04-19
+- **实现说明**：前端搜索、过滤与数据统计板完整实现，包含 15.1 状态扩充、15.2 统计面板、15.3 搜索与过滤组件、15.4 全局联动。包含：stores/packageStore.ts 更新（新增 searchKey/filterStatus 状态及 setSearchKey/setFilterStatus 动作；新增 FilterStatus 类型 = PackageStatus | 'all'；新增 getFilteredPackages 派生函数——先按 filterStatus 过滤状态（'all' 不过滤），再按 searchKey 模糊匹配 trackingNo 和 alias（大小写不敏感）；新增 getStats 派生函数——基于 getFilteredPackages 计算 total/in_transit/delivered/exception 四项统计；getGroupedPackages 改为基于 getFilteredPackages 而非原始 packages，实现过滤后分组）；pages/Dashboard.tsx 重构（左侧面板改为 flex column 布局，上方固定区域放置统计面板+搜索框+状态筛选器，下方 flex:1 滚动区域放 PackageList；统计面板使用 Row/Col 四宫格布局，每个统计卡片使用渐变背景+图标+数字+标签——总单数蓝色/运输中深蓝/已签收绿色/异常红色；搜索框使用 Ant Design Input 组件，prefix=SearchOutlined，allowClear 支持一键清空，onChange 实时更新 searchKey；状态筛选器使用 Ant Design Select 组件，选项为 全部/运输中/已签收/异常，onChange 更新 filterStatus；stats 使用 useMemo 缓存，依赖 searchKey/filterStatus/packages 确保实时更新）；components/PackageList.tsx 更新（数据源从 store.packages 切换为 getFilteredPackages()，通过 useMemo 缓存计算结果，依赖 searchKey/filterStatus/allPackages；空状态提示区分"无数据"和"搜索无结果"两种场景）；components/PackageMarker.tsx 更新（数据源从 store.packages 切换为 getFilteredPackages()，通过 useMemo 缓存，搜索/过滤变化时地图 Marker 实时增减）；components/MapView.tsx 更新（"全部定位"按钮从 store.packages 切换为 getFilteredPackages()，只定位过滤后的快递）。TypeScript 编译零错误通过。
 
 **T14 完成记录**：
 - **完成时间**：2026-04-19

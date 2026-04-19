@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import usePackageStore from '@/stores/packageStore';
 import {
   getLatestPosition,
@@ -15,8 +15,13 @@ interface PackageMarkerProps {
 }
 
 const PackageMarker: React.FC<PackageMarkerProps> = ({ map, AMap }) => {
-  const packages = usePackageStore((s) => s.packages);
+  const getFilteredPackages = usePackageStore((s) => s.getFilteredPackages);
+  const searchKey = usePackageStore((s) => s.searchKey);
+  const filterStatus = usePackageStore((s) => s.filterStatus);
+  const allPackages = usePackageStore((s) => s.packages);
   const selectedPackageId = usePackageStore((s) => s.selectedPackageId);
+
+  const packages = useMemo(() => getFilteredPackages(), [searchKey, filterStatus, allPackages]);
   const clusterRef = useRef<any>(null);
   const infoWindowRef = useRef<any>(null);
   const markerMapRef = useRef<Map<string, any>>(new Map());

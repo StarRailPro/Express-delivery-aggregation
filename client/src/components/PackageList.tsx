@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useMemo } from 'react';
 import { List, Tag, Button, Popconfirm, Spin, Empty, Typography } from 'antd';
 import {
   CarOutlined,
@@ -34,8 +34,17 @@ const STATUS_CONFIG: Record<
 const STATUS_ORDER: PackageStatus[] = ['in_transit', 'delivered', 'exception'];
 
 const PackageList: React.FC = () => {
-  const { packages, listLoading, selectedPackageId, fetchPackages, selectPackage, deletePackage } =
-    usePackageStore();
+  const listLoading = usePackageStore((s) => s.listLoading);
+  const selectedPackageId = usePackageStore((s) => s.selectedPackageId);
+  const fetchPackages = usePackageStore((s) => s.fetchPackages);
+  const selectPackage = usePackageStore((s) => s.selectPackage);
+  const deletePackage = usePackageStore((s) => s.deletePackage);
+  const getFilteredPackages = usePackageStore((s) => s.getFilteredPackages);
+  const searchKey = usePackageStore((s) => s.searchKey);
+  const filterStatus = usePackageStore((s) => s.filterStatus);
+  const allPackages = usePackageStore((s) => s.packages);
+
+  const packages = useMemo(() => getFilteredPackages(), [searchKey, filterStatus, allPackages]);
 
   useEffect(() => {
     fetchPackages();
@@ -75,7 +84,7 @@ const PackageList: React.FC = () => {
   if (packages.length === 0) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 300 }}>
-        <Empty description="暂无快递，快去添加吧" />
+        <Empty description={searchKey || filterStatus !== 'all' ? '没有匹配的快递' : '暂无快递，快去添加吧'} />
       </div>
     );
   }

@@ -226,7 +226,7 @@ const MapView: React.FC = () => {
     const AMap = AMapRef.current;
     if (!map || !AMap) return;
 
-    const currentPackages = usePackageStore.getState().packages;
+    const currentPackages = usePackageStore.getState().getFilteredPackages();
     const positions = getAllPackagePositions(currentPackages);
     if (positions.length === 0) {
       message.info('暂无快递位置信息');

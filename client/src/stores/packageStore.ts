@@ -8,8 +8,12 @@ import {
   refreshPackageAPI,
 } from '@/api/package';
 
+export type FilterStatus = PackageStatus | 'all';
+
 interface PackageState {
   packages: IPackage[];
+  searchKey: string;
+  filterStatus: FilterStatus;
   selectedPackageId: string | null;
   selectedPackage: IPackageListItem | null;
   trackingRecords: ITrackingRecord[];
@@ -22,11 +26,17 @@ interface PackageState {
   clearSelection: () => void;
   deletePackage: (id: string) => Promise<void>;
   refreshPackage: (id: string) => Promise<void>;
+  setSearchKey: (key: string) => void;
+  setFilterStatus: (status: FilterStatus) => void;
+  getFilteredPackages: () => IPackage[];
   getGroupedPackages: () => Record<PackageStatus, IPackage[]>;
+  getStats: () => { total: number; in_transit: number; delivered: number; exception: number };
 }
 
 const usePackageStore = create<PackageState>((set, get) => ({
   packages: [],
+  searchKey: '',
+  filterStatus: 'all',
   selectedPackageId: null,
   selectedPackage: null,
   trackingRecords: [],
@@ -116,12 +126,50 @@ const usePackageStore = create<PackageState>((set, get) => ({
     }
   },
 
+  setSearchKey: (key: string) => {
+    set({ searchKey: key });
+  },
+
+  setFilterStatus: (status: FilterStatus) => {
+    set({ filterStatus: status });
+  },
+
+  getFilteredPackages: () => {
+    const { packages, searchKey, filterStatus } = get();
+    let result = packages;
+
+    if (filterStatus !== 'all') {
+      result = result.filter((p) => p.status === filterStatus);
+    }
+
+    if (searchKey.trim()) {
+      const key = searchKey.trim().toLowerCase();
+      result = result.filter(
+        (p) =>
+          p.trackingNo.toLowerCase().includes(key) ||
+          p.alias.toLowerCase().includes(key),
+      );
+    }
+
+    return result;
+  },
+
   getGroupedPackages: () => {
-    const { packages } = get();
+    const filtered = get().getFilteredPackages();
     return {
-      in_transit: packages.filter((p) => p.status === 'in_transit'),
-      delivered: packages.filter((p) => p.status === 'delivered'),
-      exception: packages.filter((p) => p.status === 'exception'),
+      in_transit: filtered.filter((p) => p.status === 'in_transit'),
+      delivered: filtered.filter((p) => p.status === 'delivered'),
+      exception: filtered.filter((p) => p.status === 'exception'),
+    };
+  },
+
+  getStats: () => {
+    const filtered = get().getFilteredPackages();
+    return {
+      total: filtered.length,
+      in_transit: filtered.filter((p) => p.status === 'in_transit').length,
+      delivered: filtered.filter((p) => p.status === 'delivered').length,
+      exception: filtered.filter((p) => p.status === 'exception').length,
     };
   },
 }));
