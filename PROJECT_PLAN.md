@@ -1026,7 +1026,7 @@ Express-delivery-aggregation/
 | --- | ---------------- | ------ |
 | T11 | 前端：集成高德地图 JS API | ✅ 已完成 |
 | T12 | 前端：地图标注快递当前位置    | ✅ 已完成 |
-| T13 | 前端：运输轨迹路线绘制      | 🔲 未开始 |
+| T13 | 前端：运输轨迹路线绘制      | ✅ 已完成 |
 | T14 | 前端：多快递同时展示       | 🔲 未开始 |
 
 ### Phase 3 - 体验优化
@@ -1046,4 +1046,8 @@ Express-delivery-aggregation/
 **T12 完成记录**：
 - **完成时间**：2026-04-18
 - **实现说明**：前端地图标注快递当前位置完整实现，包含 12.1 Marker 渲染、12.2 交互弹窗、12.3 联动平移、12.4 容错处理。包含：components/PackageMarker.tsx（新建组件，接收 map 和 AMap 实例作为 props，返回 null 无 DOM 输出；12.1 Marker 渲染：监听 packageStore.packages 列表，通过 getLatestPosition 工具函数从 trackingRecords 中按时间倒序查找最新有效坐标，为每个有坐标的快递创建 AMap.Marker 并添加到地图，使用 Map<string, Marker> 管理标记实例实现增删改差量更新——新增快递创建新 Marker、已有快递仅更新位置、删除的快递调用 setMap(null) 销毁 Marker 防止重叠、坐标为空的快递不标注并移除已有 Marker；12.2 交互弹窗：创建单例 AMap.InfoWindow，点击 Marker 时动态构建 HTML 内容显示快递单号、别名、状态（使用颜色标签区分：运输中蓝色/已签收绿色/异常红色）、当前所在城市，地图空白区域点击自动关闭 InfoWindow，使用 packagesRef 避免闭包过期问题；12.3 联动平移：监听 packageStore.selectedPackageId，选中快递时调用 map.setCenter 平移到对应坐标、map.setZoom 设置缩放级别 10，选中 Marker 的 zIndex 提升至 200 实现高亮置顶，取消选中时重置 zIndex 并关闭 InfoWindow；12.4 容错处理：坐标为空的快递不渲染 Marker，组件卸载时 try-catch 安全清理所有 Marker 和 InfoWindow 防止地图已销毁时报错）；components/MapView.tsx 更新（新增 AMapRef 存储 AMap 命名空间、mapReady 状态控制 PackageMarker 渲染时机，地图初始化成功后 setMapReady(true) 触发 PackageMarker 挂载，组件卸载时 setMapReady(false) 确保 PackageMarker 先于地图销毁而卸载）；components/TrackingDetail.tsx 更新（新增 Alert 组件导入，当 trackingRecords 存在但无有效坐标时显示"暂无地图位置"友好提示，说明物流信息暂无法解析出地理位置）。TypeScript 编译零错误通过。
+
+**T13 完成记录**：
+- **完成时间**：2026-04-19
+- **实现说明**：前端运输轨迹路线绘制完整实现，包含 13.1 轨迹数据提取、13.2 折线绘制、13.3 起终点标注、13.4 渲染联动。包含：components/TrackingPath.tsx（新建组件，接收 map 和 AMap 实例作为 props，返回 null 无 DOM 输出；13.1 轨迹数据提取：extractValidCoordinates 工具函数从 packageStore.trackingRecords 中筛选所有 location 非空且经纬度有效的记录，按 timestamp 正序排列返回 CoordPoint 数组，空记录/无有效坐标时返回空数组不报错；13.2 折线绘制：当有效坐标 >= 2 时创建 AMap.Polyline 连接所有坐标点，样式为主题蓝 #1677ff、线宽 5px、透明度 0.85、showDir: true 显示白色方向箭头、lineJoin/lineCap 圆角，zIndex 50 确保在 Marker 下方；13.3 起终点标注：起点使用绿色圆形 Marker（#52c41a 背景+白色"起"字+白色边框+阴影），终点使用红色圆形 Marker（#ff4d4f 背景+白色"终"字），zIndex 300 确保在 Polyline 和 PackageMarker 之上，仅有 1 个有效坐标时只显示起点标记不绘制折线；13.4 渲染联动：监听 selectedPackageId 和 trackingRecords 变化，切换快递时先清除旧 Polyline 和起终点 Marker（setMap(null)），再绘制新轨迹，>= 2 坐标时调用 map.setFitView(overlays, false, [80,80,80,80], 15) 自动调整视野确保整条路线可见（80px 内边距+最大缩放 15 级），仅 1 坐标时使用 setZoomAndCenter(10, ...) 定位；组件卸载时 try-catch 安全清理所有覆盖物防止地图已销毁时报错）；components/PackageMarker.tsx 更新（新增 hasTrackingPath 辅助函数检查 trackingRecords 中是否有 >= 2 个有效坐标，选中快递时若存在轨迹路径则跳过 setZoomAndCenter 避免与 TrackingPath 的 setFitView 产生视图冲突，仅高亮 Marker 并打开 InfoWindow，无路径时保持原有缩放平移行为）；components/MapView.tsx 更新（导入 TrackingPath 组件，在 mapReady 后与 PackageMarker 并列渲染，传递 map 和 AMap 实例）。TypeScript 编译零错误通过。
 

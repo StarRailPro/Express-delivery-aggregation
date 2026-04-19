@@ -3,6 +3,7 @@ import { Spin, Typography } from 'antd';
 import { EnvironmentOutlined, PlusOutlined, MinusOutlined } from '@ant-design/icons';
 import { loadAMap, isMockMode, resetLoader } from '@/utils/amapLoader';
 import PackageMarker from '@/components/PackageMarker';
+import TrackingPath from '@/components/TrackingPath';
 
 const DEFAULT_CENTER: [number, number] = [104.195397, 35.86166];
 const DEFAULT_ZOOM = 4;
@@ -267,7 +268,10 @@ const MapView: React.FC = () => {
       )}
       <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
       {mapReady && mapInstanceRef.current && AMapRef.current && (
-        <PackageMarker map={mapInstanceRef.current} AMap={AMapRef.current} />
+        <>
+          <PackageMarker map={mapInstanceRef.current} AMap={AMapRef.current} />
+          <TrackingPath map={mapInstanceRef.current} AMap={AMapRef.current} />
+        </>
       )}
     </div>
   );

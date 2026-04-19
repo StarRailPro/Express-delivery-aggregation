@@ -30,6 +30,18 @@ function getLatestPosition(
   return null;
 }
 
+function hasTrackingPath(records: ITrackingRecord[]): boolean {
+  if (!records || records.length < 2) return false;
+  let count = 0;
+  for (const r of records) {
+    if (r.location && typeof r.location.lng === 'number' && typeof r.location.lat === 'number') {
+      count++;
+      if (count >= 2) return true;
+    }
+  }
+  return false;
+}
+
 function buildInfoContent(pkg: IPackage, city: string): string {
   const statusText = PACKAGE_STATUS_MAP[pkg.status];
   const statusColor = STATUS_COLOR[pkg.status];
@@ -169,6 +181,19 @@ const PackageMarker: React.FC<PackageMarkerProps> = ({ map, AMap }) => {
 
     const pos = getLatestPosition(pkg.trackingRecords);
     if (pos) {
+      if (hasTrackingPath(pkg.trackingRecords)) {
+        const marker = markersRef.current.get(selectedPackageId);
+        if (marker) {
+          marker.setzIndex(200);
+          if (infoWindowRef.current) {
+            infoWindowRef.current.setContent(buildInfoContent(pkg, pos.city));
+            infoWindowRef.current.open(map, marker.getPosition());
+          }
+        }
+        prevSelectedIdRef.current = selectedPackageId;
+        return;
+      }
+
       let handled = false;
 
       const afterMove = () => {
