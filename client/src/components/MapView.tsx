@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Spin, Typography } from 'antd';
-import { EnvironmentOutlined, PlusOutlined, MinusOutlined } from '@ant-design/icons';
+import { Spin, Typography, Button, message } from 'antd';
+import { EnvironmentOutlined, PlusOutlined, MinusOutlined, AimOutlined } from '@ant-design/icons';
 import { loadAMap, isMockMode, resetLoader } from '@/utils/amapLoader';
+import { getAllPackagePositions } from '@/utils/mapHelpers';
+import usePackageStore from '@/stores/packageStore';
 import PackageMarker from '@/components/PackageMarker';
 import TrackingPath from '@/components/TrackingPath';
 
@@ -11,7 +13,6 @@ const DEFAULT_ZOOM = 4;
 const MockMapView: React.FC = () => {
   const [zoom, setZoom] = useState(DEFAULT_ZOOM);
   const [center, setCenter] = useState({ lng: DEFAULT_CENTER[0], lat: DEFAULT_CENTER[1] });
-  const containerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
   const dragStart = useRef({ x: 0, y: 0, lng: 0, lat: 0 });
 
@@ -48,7 +49,6 @@ const MockMapView: React.FC = () => {
 
   return (
     <div
-      ref={containerRef}
       style={{
         width: '100%',
         height: '100%',
@@ -221,6 +221,35 @@ const MapView: React.FC = () => {
     };
   }, []);
 
+  const handleFitAll = useCallback(() => {
+    const map = mapInstanceRef.current;
+    const AMap = AMapRef.current;
+    if (!map || !AMap) return;
+
+    const currentPackages = usePackageStore.getState().packages;
+    const positions = getAllPackagePositions(currentPackages);
+    if (positions.length === 0) {
+      message.info('暂无快递位置信息');
+      return;
+    }
+
+    if (positions.length === 1) {
+      map.setZoomAndCenter(10, positions[0]);
+      return;
+    }
+
+    const southWest = new AMap.LngLat(
+      Math.min(...positions.map((p) => p[0])),
+      Math.min(...positions.map((p) => p[1])),
+    );
+    const northEast = new AMap.LngLat(
+      Math.max(...positions.map((p) => p[0])),
+      Math.max(...positions.map((p) => p[1])),
+    );
+    const bounds = new AMap.Bounds(southWest, northEast);
+    map.setBounds(bounds, false, [80, 80, 80, 80]);
+  }, []);
+
   if (isMockMode()) {
     return <MockMapView />;
   }
@@ -272,6 +301,23 @@ const MapView: React.FC = () => {
           <PackageMarker map={mapInstanceRef.current} AMap={AMapRef.current} />
           <TrackingPath map={mapInstanceRef.current} AMap={AMapRef.current} />
         </>
+      )}
+      {mapReady && (
+        <Button
+          type="primary"
+          icon={<AimOutlined />}
+          onClick={handleFitAll}
+          style={{
+            position: 'absolute',
+            top: 12,
+            left: 12,
+            zIndex: 200,
+            boxShadow: '0 2px 8px rgba(22,119,255,0.35)',
+            borderRadius: 6,
+          }}
+        >
+          全部定位
+        </Button>
       )}
     </div>
   );

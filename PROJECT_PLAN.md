@@ -1027,7 +1027,7 @@ Express-delivery-aggregation/
 | T11 | 前端：集成高德地图 JS API | ✅ 已完成 |
 | T12 | 前端：地图标注快递当前位置    | ✅ 已完成 |
 | T13 | 前端：运输轨迹路线绘制      | ✅ 已完成 |
-| T14 | 前端：多快递同时展示       | 🔲 未开始 |
+| T14 | 前端：多快递同时展示       | ✅ 已完成 |
 
 ### Phase 3 - 体验优化
 
@@ -1038,6 +1038,10 @@ Express-delivery-aggregation/
 | T17 | 快递状态变更通知     | 🔲 未开始 |
 | T18 | 移动端适配        | 🔲 未开始 |
 | T19 | API 调用统计面板   | 🔲 未开始 |
+
+**T14 完成记录**：
+- **完成时间**：2026-04-19
+- **实现说明**：前端多快递全局大屏展示与性能优化完整实现，包含 14.1 全局展示、14.2 快递公司颜色区分、14.3 一键全部定位、14.4 点聚合性能优化。包含：utils/mapHelpers.ts（新建共享地图工具模块，抽取 getLatestPosition 从 trackingRecords 按时间倒序查找最新有效坐标、hasTrackingPath 判断是否有≥2个有效坐标、CARRIER_COLOR_MAP 快递公司颜色映射表覆盖10家主流快递——顺丰橙/中通蓝/圆通红橙/韵达紫/申通青/百世粉/极兔绿/京东金/邮政深蓝/天天黄绿、getMarkerColor 优先按快递公司着色否则按状态着色、buildMarkerContent 根据颜色生成 SVG Marker 并支持选中放大+发光效果、buildClusterContent 根据聚合数量生成渐变蓝色圆形聚合图标含数字、buildInfoContent 生成 InfoWindow HTML 含快递公司颜色圆点标识、getAllPackagePositions 提取所有快递位置供全部定位使用）；utils/amapLoader.ts 更新（plugins 数组新增 'AMap.MarkerCluster' 加载点聚合插件）；components/PackageMarker.tsx 重构（核心改动：使用 AMap.MarkerCluster 替代手动 Marker 管理，传入 data 数组（含 lnglat/pkgId/pkg/pos），renderMarker 回调中根据 getMarkerColor 设置快递公司颜色、通过 selectedIdRef.current 判断选中状态设置放大+发光效果、注册 click 事件打开 InfoWindow、将 marker 实例存入 markerMapRef 供选中效果直接操作；renderClusterMarker 回调中设置聚合图标内容和偏移；选中效果通过独立 effect 直接操作 markerMapRef 中的 Marker 实例（setContent 更新样式+setzIndex 提升层级），避免重建 Cluster 导致闪烁；使用 selectedIdRef 确保 renderMarker 闭包中始终读取最新选中状态；组件卸载时 clusterRef.setMap(null) 清除聚合器+markerMapRef.clear()+infoWindowRef.close() 安全清理）；components/MapView.tsx 更新（新增"全部定位"按钮——使用 Ant Design Button type=primary icon=AimOutlined，绝对定位在地图左上角（top:12 left:12 zIndex:200），带蓝色阴影和圆角；handleFitAll 回调从 packages store 获取所有快递位置，0个位置时 message.info 提示不报错，1个位置时 setZoomAndCenter(10)，≥2个位置时计算 AMap.Bounds 并 setBounds(bounds, false, [80,80,80,80]) 自动调整视野包含所有标注；按钮仅在 mapReady 后渲染）。TypeScript 编译零错误通过。
 
 **T11 完成记录**：
 - **完成时间**：2026-04-18

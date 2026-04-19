@@ -36,7 +36,7 @@ export const loadAMap = (): Promise<AMapConstructor> => {
   loadPromise = AMapLoader.load({
     key: AMAP_JS_KEY,
     version: '2.0',
-    plugins: ['AMap.Scale', 'AMap.ToolBar', 'AMap.ControlBar'],
+    plugins: ['AMap.Scale', 'AMap.ToolBar', 'AMap.ControlBar', 'AMap.MarkerCluster'],
   });
 
   return loadPromise;
