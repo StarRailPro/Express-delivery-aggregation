@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { Spin, Typography } from 'antd';
 import { EnvironmentOutlined, PlusOutlined, MinusOutlined } from '@ant-design/icons';
 import { loadAMap, isMockMode, resetLoader } from '@/utils/amapLoader';
+import PackageMarker from '@/components/PackageMarker';
 
 const DEFAULT_CENTER: [number, number] = [104.195397, 35.86166];
 const DEFAULT_ZOOM = 4;
@@ -160,7 +161,9 @@ const MockMapView: React.FC = () => {
 
 const MapView: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<unknown>(null);
+  const mapInstanceRef = useRef<any>(null);
+  const AMapRef = useRef<any>(null);
+  const [mapReady, setMapReady] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -188,6 +191,8 @@ const MapView: React.FC = () => {
         map.addControl(new AMap.ToolBar({ position: 'RT' }));
 
         mapInstanceRef.current = map;
+        AMapRef.current = AMap;
+        setMapReady(true);
         setError(null);
       } catch (err) {
         if (!destroyed) {
@@ -205,10 +210,12 @@ const MapView: React.FC = () => {
 
     return () => {
       destroyed = true;
+      setMapReady(false);
       if (mapInstanceRef.current) {
-        (mapInstanceRef.current as { destroy: () => void }).destroy();
+        mapInstanceRef.current.destroy();
         mapInstanceRef.current = null;
       }
+      AMapRef.current = null;
       resetLoader();
     };
   }, []);
@@ -259,6 +266,9 @@ const MapView: React.FC = () => {
         </div>
       )}
       <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
+      {mapReady && mapInstanceRef.current && AMapRef.current && (
+        <PackageMarker map={mapInstanceRef.current} AMap={AMapRef.current} />
+      )}
     </div>
   );
 };

@@ -1025,7 +1025,7 @@ Express-delivery-aggregation/
 | 任务  | 描述               | 状态     |
 | --- | ---------------- | ------ |
 | T11 | 前端：集成高德地图 JS API | ✅ 已完成 |
-| T12 | 前端：地图标注快递当前位置    | 🔲 未开始 |
+| T12 | 前端：地图标注快递当前位置    | ✅ 已完成 |
 | T13 | 前端：运输轨迹路线绘制      | 🔲 未开始 |
 | T14 | 前端：多快递同时展示       | 🔲 未开始 |
 
@@ -1042,4 +1042,8 @@ Express-delivery-aggregation/
 **T11 完成记录**：
 - **完成时间**：2026-04-18
 - **实现说明**：前端集成高德地图 JS API 2.0 完整实现，含 Mock 降级模式。包含：utils/amapLoader.ts（基于 @amap/amap-jsapi-loader 的动态加载器，单例模式防止重复加载，isMockMode 判断 Key 是否为空/mock，支持 VITE_AMAP_SECURITY_CODE 安全密钥配置，resetLoader 清理缓存供组件卸载时调用）；components/MapView.tsx（地图容器组件，Mock 模式渲染带渐变背景+缩放/平移 UI 的占位 Div，真实模式通过 loadAMap 初始化 AMap.Map 实例，默认中心点 [104.195397, 35.86166] 中国地理中心，默认缩放级别 4，添加 Scale 和 ToolBar 控件，组件卸载时调用 map.destroy() 销毁实例防止内存泄漏，destroyed 标志防止卸载后异步回调执行，加载中/加载失败均有友好 UI 提示）；pages/Dashboard.tsx 更新（右侧 70% 区域改为上下分栏布局，上方 55% 放置 MapView 地图组件，下方 45% 放置 TrackingDetail 物流详情，未选中快递时地图展示全图）；client/.env.example 创建（VITE_AMAP_JS_KEY 默认 mock、VITE_AMAP_SECURITY_CODE 默认空）；.env.example 根目录更新（新增 AMAP_SECURITY_CODE 配置项）。TypeScript 编译零错误通过。
+
+**T12 完成记录**：
+- **完成时间**：2026-04-18
+- **实现说明**：前端地图标注快递当前位置完整实现，包含 12.1 Marker 渲染、12.2 交互弹窗、12.3 联动平移、12.4 容错处理。包含：components/PackageMarker.tsx（新建组件，接收 map 和 AMap 实例作为 props，返回 null 无 DOM 输出；12.1 Marker 渲染：监听 packageStore.packages 列表，通过 getLatestPosition 工具函数从 trackingRecords 中按时间倒序查找最新有效坐标，为每个有坐标的快递创建 AMap.Marker 并添加到地图，使用 Map<string, Marker> 管理标记实例实现增删改差量更新——新增快递创建新 Marker、已有快递仅更新位置、删除的快递调用 setMap(null) 销毁 Marker 防止重叠、坐标为空的快递不标注并移除已有 Marker；12.2 交互弹窗：创建单例 AMap.InfoWindow，点击 Marker 时动态构建 HTML 内容显示快递单号、别名、状态（使用颜色标签区分：运输中蓝色/已签收绿色/异常红色）、当前所在城市，地图空白区域点击自动关闭 InfoWindow，使用 packagesRef 避免闭包过期问题；12.3 联动平移：监听 packageStore.selectedPackageId，选中快递时调用 map.setCenter 平移到对应坐标、map.setZoom 设置缩放级别 10，选中 Marker 的 zIndex 提升至 200 实现高亮置顶，取消选中时重置 zIndex 并关闭 InfoWindow；12.4 容错处理：坐标为空的快递不渲染 Marker，组件卸载时 try-catch 安全清理所有 Marker 和 InfoWindow 防止地图已销毁时报错）；components/MapView.tsx 更新（新增 AMapRef 存储 AMap 命名空间、mapReady 状态控制 PackageMarker 渲染时机，地图初始化成功后 setMapReady(true) 触发 PackageMarker 挂载，组件卸载时 setMapReady(false) 确保 PackageMarker 先于地图销毁而卸载）；components/TrackingDetail.tsx 更新（新增 Alert 组件导入，当 trackingRecords 存在但无有效坐标时显示"暂无地图位置"友好提示，说明物流信息暂无法解析出地理位置）。TypeScript 编译零错误通过。
 

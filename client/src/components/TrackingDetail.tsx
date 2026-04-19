@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { Timeline, Button, Spin, Empty, Typography, Tag, Descriptions, Card } from 'antd';
+import { Timeline, Button, Spin, Empty, Typography, Tag, Descriptions, Card, Alert } from 'antd';
 import {
   ReloadOutlined,
   CarOutlined,
@@ -159,6 +159,20 @@ const TrackingDetail: React.FC = () => {
           </Descriptions>
         </Card>
       ) : null}
+
+      {trackingRecords.length > 0 &&
+        !trackingRecords.some(
+          (r) => r.location && typeof r.location.lng === 'number' && typeof r.location.lat === 'number',
+        ) && (
+          <Alert
+            message="暂无地图位置"
+            description="该快递的物流信息暂无法解析出地理位置，无法在地图上标注"
+            type="info"
+            showIcon
+            icon={<EnvironmentOutlined />}
+            style={{ marginBottom: 16, borderRadius: 8 }}
+          />
+        )}
 
       <Card
         size="small"
