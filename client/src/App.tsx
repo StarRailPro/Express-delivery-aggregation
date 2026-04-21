@@ -5,6 +5,7 @@ import AuthGuard from '@/components/AuthGuard';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import Dashboard from '@/pages/Dashboard';
+import AdminPanel from '@/pages/AdminPanel';
 
 const App: React.FC = () => {
   return (
@@ -16,6 +17,7 @@ const App: React.FC = () => {
           <Route path="/register" element={<Register />} />
           <Route element={<AuthGuard />}>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/admin" element={<AdminPanel />} />
           </Route>
         </Routes>
       </BrowserRouter>

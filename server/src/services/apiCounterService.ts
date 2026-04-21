@@ -1,3 +1,5 @@
+import ApiCallLog from '../models/ApiCallLog';
+
 interface ApiCallRecord {
   apiName: string;
   timestamp: Date;
@@ -20,17 +22,27 @@ class ApiCounterService {
   private records: ApiCallRecord[] = [];
 
   record(apiName: string, success: boolean, durationMs: number, errorMessage?: string): void {
-    this.records.push({
+    const entry: ApiCallRecord = {
       apiName,
       timestamp: new Date(),
       success,
       durationMs,
       errorMessage,
-    });
+    };
+
+    this.records.push(entry);
 
     if (this.records.length > MAX_RECORDS) {
       this.records = this.records.slice(-MAX_RECORDS);
     }
+
+    ApiCallLog.create({
+      apiName,
+      success,
+      durationMs,
+      errorMessage: errorMessage || null,
+      timestamp: entry.timestamp,
+    }).catch(() => {});
   }
 
   getDailyStats(dateStr?: string): DailyStats {

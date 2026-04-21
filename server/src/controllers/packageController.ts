@@ -6,7 +6,7 @@ import { successResponse } from '../utils/responseHandler';
 import { AppError } from '../middleware/errorHandler';
 import { AuthenticatedRequest } from '../middleware/auth';
 import expressApiService from '../services/expressApiService';
-import { syncTrackingRecords, updatePackageCities } from '../services/trackingSyncService';
+import { syncTrackingRecords, updatePackageCities, resolvePackageStatus, createStatusChangeNotification } from '../services/trackingSyncService';
 import { Types } from 'mongoose';
 
 export async function create(
@@ -310,13 +310,29 @@ export async function refresh(
     }
 
     if (pkg.status === 'delivered') {
-      successResponse(res, {
-        id: pkg._id,
-        trackingNo: pkg.trackingNo,
-        status: pkg.status,
-        lastSyncAt: pkg.lastSyncAt,
-        message: '快递已签收，无需刷新',
-      });
+      const trackingRecords = await TrackingRecord.find({ packageId: id }).sort({ timestamp: -1 });
+
+      successResponse(
+        res,
+        {
+          package: {
+            id: pkg._id,
+            trackingNo: pkg.trackingNo,
+            carrier: pkg.carrier,
+            carrierCode: pkg.carrierCode,
+            alias: pkg.alias,
+            status: pkg.status,
+            fromCity: pkg.fromCity,
+            toCity: pkg.toCity,
+            lastSyncAt: pkg.lastSyncAt,
+            isArchived: pkg.isArchived,
+            createdAt: pkg.createdAt,
+            updatedAt: pkg.updatedAt,
+          },
+          trackingRecords,
+        },
+        '快递已签收，无需刷新',
+      );
       return;
     }
 
@@ -326,13 +342,21 @@ export async function refresh(
 
     const recordIds = await syncTrackingRecords(pkg._id as Types.ObjectId, trackingResult.traces);
 
+    const resolvedStatus = resolvePackageStatus(trackingResult.status, trackingResult.traces);
+
+    const oldStatus = pkg.status as 'in_transit' | 'delivered' | 'exception';
+
     const updateData: Record<string, unknown> = {
       lastSyncAt: new Date(),
       trackingRecords: recordIds,
     };
 
-    if (trackingResult.status === 'delivered' || trackingResult.status === 'exception') {
-      updateData.status = trackingResult.status;
+    if (
+      resolvedStatus === 'delivered' ||
+      resolvedStatus === 'exception' ||
+      resolvedStatus === 'in_transit'
+    ) {
+      updateData.status = resolvedStatus;
     }
 
     await updatePackageCities(pkg._id as Types.ObjectId, trackingResult.traces);
@@ -340,6 +364,17 @@ export async function refresh(
     const updatedPkg = await Package.findOneAndUpdate({ _id: id, userId }, updateData, {
       new: true,
     }).populate('trackingRecords');
+
+    if (oldStatus !== resolvedStatus) {
+      await createStatusChangeNotification(
+        pkg._id as Types.ObjectId,
+        new Types.ObjectId(userId),
+        oldStatus,
+        resolvedStatus,
+        pkg.trackingNo,
+        pkg.alias,
+      );
+    }
 
     const trackingRecords = await TrackingRecord.find({ packageId: id }).sort({ timestamp: -1 });
 

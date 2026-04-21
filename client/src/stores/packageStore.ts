@@ -25,7 +25,7 @@ interface PackageState {
   selectPackage: (id: string) => Promise<void>;
   clearSelection: () => void;
   deletePackage: (id: string) => Promise<void>;
-  refreshPackage: (id: string) => Promise<void>;
+  refreshPackage: (id: string) => Promise<{ oldStatus?: PackageStatus; newStatus?: PackageStatus }>;
   setSearchKey: (key: string) => void;
   setFilterStatus: (status: FilterStatus) => void;
   getFilteredPackages: () => IPackage[];
@@ -98,6 +98,7 @@ const usePackageStore = create<PackageState>((set, get) => ({
   },
 
   refreshPackage: async (id: string) => {
+    const oldStatus = get().packages.find((p) => p._id === id)?.status;
     set({ refreshLoading: true });
     try {
       const res = await refreshPackageAPI(id);
@@ -121,6 +122,8 @@ const usePackageStore = create<PackageState>((set, get) => ({
         selectedPackage: refreshedPkg,
         trackingRecords: refreshedRecords,
       }));
+
+      return { oldStatus, newStatus: refreshedPkg.status };
     } finally {
       set({ refreshLoading: false });
     }

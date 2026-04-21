@@ -48,3 +48,13 @@ export interface IJwtPayload {
   userId: string;
   username: string;
 }
+
+export interface INotification {
+  userId: Types.ObjectId;
+  packageId: Types.ObjectId;
+  title: string;
+  content: string;
+  isRead: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}

@@ -2,7 +2,7 @@ import cron from 'node-cron';
 import Package from '../models/Package';
 import TrackingRecord from '../models/TrackingRecord';
 import expressApiService from './expressApiService';
-import { syncTrackingRecords, updatePackageCities } from './trackingSyncService';
+import { syncTrackingRecords, updatePackageCities, resolvePackageStatus, createStatusChangeNotification } from './trackingSyncService';
 import { runWithConcurrency, TaskResult } from '../utils/concurrency';
 import { Types } from 'mongoose';
 
@@ -36,9 +36,11 @@ function getCronExpression(): string {
 
 async function refreshSinglePackage(pkg: {
   _id: Types.ObjectId;
+  userId: Types.ObjectId;
   trackingNo: string;
   carrierCode: string;
   status: string;
+  alias: string;
 }): Promise<{ status: 'success' | 'failure' | 'skipped'; error?: string }> {
   if (pkg.status === 'delivered') {
     return { status: 'skipped' };
@@ -54,22 +56,35 @@ async function refreshSinglePackage(pkg: {
 
     const recordIds = await syncTrackingRecords(pkg._id, trackingResult.traces);
 
+    const resolvedStatus = resolvePackageStatus(trackingResult.status, trackingResult.traces);
+
     const updateData: Record<string, unknown> = {
       lastSyncAt: new Date(),
       trackingRecords: recordIds,
     };
 
     if (
-      trackingResult.status === 'delivered' ||
-      trackingResult.status === 'exception' ||
-      trackingResult.status === 'in_transit'
+      resolvedStatus === 'delivered' ||
+      resolvedStatus === 'exception' ||
+      resolvedStatus === 'in_transit'
     ) {
-      updateData.status = trackingResult.status;
+      updateData.status = resolvedStatus;
     }
 
     await updatePackageCities(pkg._id, trackingResult.traces);
 
     await Package.findByIdAndUpdate(pkg._id, updateData);
+
+    if (pkg.status !== resolvedStatus) {
+      await createStatusChangeNotification(
+        pkg._id,
+        pkg.userId,
+        pkg.status as 'in_transit' | 'delivered' | 'exception',
+        resolvedStatus,
+        pkg.trackingNo,
+        pkg.alias,
+      );
+    }
 
     return { status: 'success' };
   } catch (error) {
@@ -96,7 +111,7 @@ async function executeScheduledRefresh(): Promise<RefreshLog> {
   const packages = await Package.find({
     status: { $in: ['in_transit', 'exception'] },
     isArchived: false,
-  }).select('_id trackingNo carrierCode status');
+  }).select('_id userId trackingNo carrierCode status alias');
 
   console.log(
     `[Scheduler] 查询到 ${packages.length} 个需要刷新的快递（状态: in_transit / exception）`,
@@ -111,9 +126,11 @@ async function executeScheduledRefresh(): Promise<RefreshLog> {
 
   const packageItems = packages.map((p) => ({
     _id: p._id as Types.ObjectId,
+    userId: p.userId as Types.ObjectId,
     trackingNo: p.trackingNo,
     carrierCode: p.carrierCode,
     status: p.status,
+    alias: p.alias,
   }));
 
   const results: TaskResult<typeof packageItems[0]>[] = await runWithConcurrency(

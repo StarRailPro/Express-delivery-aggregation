@@ -6,6 +6,8 @@ import healthRouter from './routes/health';
 import authRouter from './routes/auth';
 import packageRouter from './routes/package';
 import geocodingRouter from './routes/geocoding';
+import notificationRouter from './routes/notification';
+import adminRouter from './routes/admin';
 import { startScheduler } from './services/scheduler';
 
 const app = express();
@@ -20,6 +22,8 @@ app.use('/api/health', healthRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/packages', packageRouter);
 app.use('/api/geocoding', geocodingRouter);
+app.use('/api/notifications', notificationRouter);
+app.use('/api/admin', adminRouter);
 
 app.use(errorHandler);
 

@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { Timeline, Button, Spin, Empty, Typography, Tag, Descriptions, Card, Alert } from 'antd';
+import { Timeline, Button, Spin, Empty, Typography, Tag, Descriptions, Card, Alert, notification } from 'antd';
 import {
   ReloadOutlined,
   CarOutlined,
@@ -37,7 +37,15 @@ const TrackingDetail: React.FC = () => {
   const handleRefresh = useCallback(async () => {
     if (!selectedPackageId) return;
     try {
-      await refreshPackage(selectedPackageId);
+      const result = await refreshPackage(selectedPackageId);
+      if (result && result.oldStatus !== 'delivered' && result.newStatus === 'delivered') {
+        notification.success({
+          message: '🎉 您的快递已签收！',
+          description: '恭喜！您的快递已成功签收，可前往详情查看物流轨迹',
+          placement: 'topRight',
+          duration: 5,
+        });
+      }
     } catch {
       // error handled by axios interceptor
     }

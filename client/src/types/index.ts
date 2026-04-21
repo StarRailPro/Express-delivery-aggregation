@@ -64,3 +64,14 @@ export const PACKAGE_STATUS_MAP: Record<PackageStatus, string> = {
   delivered: '已签收',
   exception: '异常',
 };
+
+export interface INotification {
+  _id: string;
+  userId: string;
+  packageId: string;
+  title: string;
+  content: string;
+  isRead: boolean;
+  createdAt: string;
+  updatedAt: string;
+}

@@ -10,6 +10,7 @@ import {
   CheckCircleOutlined,
   WarningOutlined,
   InboxOutlined,
+  DashboardOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '@/stores/authStore';
@@ -19,6 +20,7 @@ import PackageList from '@/components/PackageList';
 import TrackingDetail from '@/components/TrackingDetail';
 import MapView from '@/components/MapView';
 import AddPackageModal from '@/components/AddPackageModal';
+import StatusNotifier from '@/components/StatusNotifier';
 
 const { Header, Content } = Layout;
 
@@ -72,6 +74,12 @@ const Dashboard: React.FC = () => {
             onClick={() => setAddModalOpen(true)}
           >
             添加快递
+          </Button>
+          <Button
+            icon={<DashboardOutlined />}
+            onClick={() => navigate('/admin')}
+          >
+            管理后台
           </Button>
           {user && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -218,6 +226,7 @@ const Dashboard: React.FC = () => {
         </div>
       </Content>
       <AddPackageModal open={addModalOpen} onClose={() => setAddModalOpen(false)} />
+      <StatusNotifier />
     </Layout>
   );
 };
